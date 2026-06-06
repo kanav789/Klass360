@@ -236,6 +236,168 @@ Authorization: Bearer <jwt_token>
 
 ---
 
+### Branch Management
+
+> **Auth required:** All branch endpoints require a valid admin JWT token.
+
+#### Create Branch
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/branches` | Yes | Create a new institute branch |
+
+**Request body:**
+
+```json
+{
+  "name": "Klass360 Delhi Campus",
+  "address": "123 Education Lane, Connaught Place, New Delhi, 110001"
+}
+```
+
+**Validation rules:**
+- `name` — required, max 150 characters, must be unique (case-insensitive)
+- `address` — required, max 500 characters
+
+**Success response (201):**
+
+```json
+{
+  "success": true,
+  "message": "Branch created successfully",
+  "data": {
+    "branch": {
+      "id": "...",
+      "name": "Klass360 Delhi Campus",
+      "address": "123 Education Lane, Connaught Place, New Delhi, 110001",
+      "createdBy": "...",
+      "createdAt": "2026-06-06T...",
+      "updatedAt": "2026-06-06T..."
+    }
+  }
+}
+```
+
+**Used for:** "Add Branch" form on the frontend Branches page.
+
+---
+
+#### Get All Branches
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/branches` | Yes | List all branches (newest first) |
+
+**Success response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "branches": [
+      {
+        "id": "...",
+        "name": "Klass360 Delhi Campus",
+        "address": "123 Education Lane, Connaught Place, New Delhi, 110001",
+        "createdBy": "...",
+        "createdAt": "2026-06-06T...",
+        "updatedAt": "2026-06-06T..."
+      }
+    ],
+    "count": 1
+  }
+}
+```
+
+**Used for:** Branches table listing on the frontend.
+
+---
+
+#### Get Branch by ID
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/branches/:id` | Yes | Get a single branch by MongoDB ID |
+
+**Success response (200):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "branch": {
+      "id": "...",
+      "name": "Klass360 Delhi Campus",
+      "address": "123 Education Lane, Connaught Place, New Delhi, 110001",
+      "createdBy": "...",
+      "createdAt": "2026-06-06T...",
+      "updatedAt": "2026-06-06T..."
+    }
+  }
+}
+```
+
+**Used for:** Fetching a single branch for edit operations.
+
+---
+
+#### Update Branch
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `PUT` | `/branches/:id` | Yes | Update branch name and address |
+
+**Request body:**
+
+```json
+{
+  "name": "Klass360 Mumbai Campus",
+  "address": "456 Learning Road, Bandra West, Mumbai, 400050"
+}
+```
+
+**Success response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Branch updated successfully",
+  "data": {
+    "branch": {
+      "id": "...",
+      "name": "Klass360 Mumbai Campus",
+      "address": "456 Learning Road, Bandra West, Mumbai, 400050",
+      "createdBy": "...",
+      "createdAt": "2026-06-06T...",
+      "updatedAt": "2026-06-06T..."
+    }
+  }
+}
+```
+
+**Used for:** Edit branch modal on the frontend.
+
+---
+
+#### Delete Branch
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `DELETE` | `/branches/:id` | Yes | Permanently delete a branch |
+
+**Success response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Branch deleted successfully"
+}
+```
+
+**Used for:** Delete confirmation modal on the frontend.
+
+---
+
 ## Project Structure
 
 ```
@@ -244,22 +406,26 @@ backend/
 │   ├── config/
 │   │   └── db.js              # MongoDB connection
 │   ├── controllers/
-│   │   └── authController.js  # Auth business logic
+│   │   ├── authController.js   # Auth business logic
+│   │   └── branchController.js # Branch CRUD logic
 │   ├── middleware/
 │   │   ├── auth.js            # JWT authentication guard
 │   │   ├── errorHandler.js    # Global error handler
 │   │   └── validate.js        # Request validation middleware
 │   ├── models/
-│   │   └── Admin.js           # Admin Mongoose schema
+│   │   ├── Admin.js           # Admin Mongoose schema
+│   │   └── Branch.js          # Branch Mongoose schema
 │   ├── routes/
 │   │   ├── authRoutes.js      # /api/auth/* routes
+│   │   ├── branchRoutes.js    # /api/branches/* routes
 │   │   └── index.js           # Route aggregator
 │   ├── utils/
 │   │   ├── AppError.js        # Custom error class
 │   │   ├── asyncHandler.js    # Async route wrapper
 │   │   └── jwt.js             # Token sign/verify helpers
 │   ├── validators/
-│   │   └── authValidator.js   # express-validator rules
+│   │   ├── authValidator.js   # Auth validation rules
+│   │   └── branchValidator.js # Branch validation rules
 │   ├── app.js                 # Express app setup
 │   └── server.js              # Entry point
 ├── .env.example
@@ -291,5 +457,5 @@ backend/
 | `401` | Invalid credentials or expired/missing token |
 | `403` | Account deactivated or insufficient permissions |
 | `404` | Route not found |
-| `409` | Email already registered |
+| `409` | Email or branch name already exists |
 | `500` | Internal server error |

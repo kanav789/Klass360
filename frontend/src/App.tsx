@@ -4,6 +4,7 @@ import { GuestRoute } from '@/components/auth/GuestRoute'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { SignupPage } from '@/pages/auth/SignupPage'
+import { BranchesPage } from '@/pages/branches/BranchesPage'
 import { PlaceholderPage } from '@/pages/PlaceholderPage'
 
 function App() {
@@ -54,6 +55,7 @@ function App() {
                 />
               }
             />
+            <Route path="/branches" element={<BranchesPage />} />
             <Route
               path="/fees"
               element={

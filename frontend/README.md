@@ -55,13 +55,25 @@ This section documents **what frontend feature connects to which backend API**.
 | `src/context/AuthContext.tsx` (on app load) | `GET /api/auth/me` | Validates stored token and restores admin session |
 | `src/components/layout/TopHeader.tsx` | `POST /api/auth/logout` | Logs out admin and clears stored token |
 
+### Branch Management
+
+| Frontend Location | Backend API | What It Does |
+|-------------------|-------------|--------------|
+| `src/pages/branches/BranchesPage.tsx` | `GET /api/branches` | Loads all branches into the table on page mount |
+| `src/components/branches/BranchFormModal.tsx` (create) | `POST /api/branches` | Creates a new branch with entity name and address |
+| `src/components/branches/BranchFormModal.tsx` (edit) | `PUT /api/branches/:id` | Updates an existing branch's name and address |
+| `src/components/branches/DeleteBranchModal.tsx` | `DELETE /api/branches/:id` | Permanently deletes a branch after confirmation |
+| `src/services/branchService.ts` | `GET /api/branches/:id` | Available for fetching a single branch (used by service layer) |
+
 ### API Layer
 
 | File | Role |
 |------|------|
 | `src/lib/api.ts` | Base HTTP client — attaches JWT, handles errors, manages token storage |
 | `src/services/authService.ts` | Auth-specific API calls (register, login, getMe, logout) |
+| `src/services/branchService.ts` | Branch CRUD API calls (getAll, getById, create, update, delete) |
 | `src/types/auth.ts` | TypeScript interfaces for admin and API responses |
+| `src/types/branch.ts` | TypeScript interfaces for branch and API responses |
 
 ### Route Protection
 
@@ -128,6 +140,9 @@ frontend/src/
 │   │   ├── AuthSplitLayout.tsx    # Split-screen auth layout
 │   │   ├── GuestRoute.tsx         # Redirects logged-in users away from auth pages
 │   │   └── ProtectedRoute.tsx     # Guards dashboard routes
+│   ├── branches/
+│   │   ├── BranchFormModal.tsx    # Create/edit branch modal
+│   │   └── DeleteBranchModal.tsx  # Delete confirmation modal
 │   ├── brand/
 │   │   └── Logo.tsx
 │   ├── layout/
@@ -143,11 +158,15 @@ frontend/src/
 │   ├── auth/
 │   │   ├── LoginPage.tsx          # Integrated with POST /auth/login
 │   │   └── SignupPage.tsx         # Integrated with POST /auth/register
+│   ├── branches/
+│   │   └── BranchesPage.tsx       # Branch list + CRUD UI
 │   └── PlaceholderPage.tsx        # Placeholder for future pages
 ├── services/
-│   └── authService.ts             # Auth API service
+│   ├── authService.ts             # Auth API service
+│   └── branchService.ts           # Branch API service
 ├── types/
-│   └── auth.ts                    # Auth TypeScript types
+│   ├── auth.ts                    # Auth TypeScript types
+│   └── branch.ts                  # Branch TypeScript types
 ├── App.tsx                        # Route definitions
 └── main.tsx                       # App entry with AuthProvider
 ```
@@ -164,6 +183,7 @@ frontend/src/
 | `/dashboard` | Protected | Placeholder |
 | `/leads` | Protected | Placeholder |
 | `/students` | Protected | Placeholder |
+| `/branches` | Protected | Branch management (CRUD) |
 | `/fees` | Protected | Placeholder |
 | `/reports` | Protected | Placeholder |
 | `/calendar` | Protected | Placeholder |
