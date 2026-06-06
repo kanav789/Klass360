@@ -796,6 +796,75 @@ Sections link a **course** to a **branch** with a schedule. The selected branch 
 
 ---
 
+### Enquiry Management
+
+> **Auth required:** All enquiry endpoints require a valid admin JWT token.
+
+#### Create Enquiry
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/enquiries` | Yes | Create a new enquiry from a lead |
+
+**Request body:**
+
+```json
+{
+  "leadId": "leadMongoId",
+  "courseId": "courseMongoId",
+  "branchId": "branchMongoId",
+  "assignedTo": "userMongoId",
+  "enquiryDate": "2026-06-06",
+  "status": "yet_to_decide",
+  "notes": "Follow up next week"
+}
+```
+
+**Validation rules:**
+- `leadId` — required, valid lead ID
+- `courseId` — required, valid course ID linked to branch
+- `branchId` — required, valid branch ID
+- `assignedTo` — required, valid user ID
+- `enquiryDate` — required, valid ISO date
+- `status` — required, one of: `interested`, `not_interested`, `yet_to_decide`, `see_in_future`
+- `notes` — optional, max 2000 characters
+
+---
+
+#### Get All Enquiries
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/enquiries` | Yes | List all enquiries with populated lead, branch, course, and assigned user |
+
+---
+
+#### Get Enquiry by ID
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/enquiries/:id` | Yes | Get a single enquiry by MongoDB ID |
+
+---
+
+#### Update Enquiry
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `PUT` | `/enquiries/:id` | Yes | Update enquiry details |
+
+**Request body:** Same fields as create.
+
+---
+
+#### Delete Enquiry
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `DELETE` | `/enquiries/:id` | Yes | Permanently delete an enquiry |
+
+---
+
 ## Project Structure
 
 ```
@@ -809,7 +878,8 @@ backend/
 │   │   ├── courseController.js  # Course CRUD logic
 │   │   ├── sectionController.js # Section CRUD logic
 │   │   ├── userController.js    # User CRUD logic
-│   │   └── leadController.js    # Lead CRUD logic
+│   │   ├── leadController.js    # Lead CRUD logic
+│   │   └── enquiryController.js # Enquiry CRUD logic
 │   ├── middleware/
 │   │   ├── auth.js            # JWT authentication guard
 │   │   ├── errorHandler.js    # Global error handler
@@ -820,7 +890,8 @@ backend/
 │   │   ├── Course.js          # Course Mongoose schema
 │   │   ├── Section.js         # Section Mongoose schema
 │   │   ├── User.js            # User Mongoose schema
-│   │   └── Lead.js            # Lead Mongoose schema
+│   │   ├── Lead.js            # Lead Mongoose schema
+│   │   └── Enquiry.js         # Enquiry Mongoose schema
 │   ├── routes/
 │   │   ├── authRoutes.js      # /api/auth/* routes
 │   │   ├── branchRoutes.js    # /api/branches/* routes
@@ -828,6 +899,7 @@ backend/
 │   │   ├── sectionRoutes.js   # /api/sections/* routes
 │   │   ├── userRoutes.js      # /api/users/* routes
 │   │   ├── leadRoutes.js      # /api/leads/* routes
+│   │   ├── enquiryRoutes.js   # /api/enquiries/* routes
 │   │   └── index.js           # Route aggregator
 │   ├── utils/
 │   │   ├── AppError.js        # Custom error class
@@ -839,7 +911,8 @@ backend/
 │   │   ├── courseValidator.js # Course validation rules
 │   │   ├── sectionValidator.js # Section validation rules
 │   │   ├── userValidator.js    # User validation rules
-│   │   └── leadValidator.js    # Lead validation rules
+│   │   ├── leadValidator.js    # Lead validation rules
+│   │   └── enquiryValidator.js # Enquiry validation rules
 │   ├── app.js                 # Express app setup
 │   └── server.js              # Entry point
 ├── .env.example

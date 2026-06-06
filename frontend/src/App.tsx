@@ -7,6 +7,7 @@ import { SignupPage } from '@/pages/auth/SignupPage'
 import { BranchesPage } from '@/pages/branches/BranchesPage'
 import { CoursesPage } from '@/pages/courses/CoursesPage'
 import { SectionsPage } from '@/pages/sections/SectionsPage'
+import { EnquiriesPage } from '@/pages/enquiries/EnquiriesPage'
 import { LeadsPage } from '@/pages/leads/LeadsPage'
 import { UsersPage } from '@/pages/users/UsersPage'
 import { PlaceholderPage } from '@/pages/PlaceholderPage'
@@ -33,15 +34,7 @@ function App() {
               }
             />
             <Route path="/leads" element={<LeadsPage />} />
-            <Route
-              path="/enquiries"
-              element={
-                <PlaceholderPage
-                  title="Enquiries"
-                  description="Smart enquiry creation and management."
-                />
-              }
-            />
+            <Route path="/enquiries" element={<EnquiriesPage />} />
             <Route
               path="/students"
               element={

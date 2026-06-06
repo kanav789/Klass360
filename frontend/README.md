@@ -109,6 +109,16 @@ This section documents **what frontend feature connects to which backend API**.
 | `src/components/leads/DeleteLeadModal.tsx` | `DELETE /api/leads/:id` | Permanently deletes a lead after confirmation |
 | `src/pages/leads/LeadsPage.tsx` | `GET /api/branches`, `GET /api/courses`, `GET /api/users` | Loads dropdown options for branch, course, and assigned user |
 
+### Enquiry Management
+
+| Frontend Location | Backend API | What It Does |
+|-------------------|-------------|--------------|
+| `src/pages/enquiries/EnquiriesPage.tsx` | `GET /api/enquiries` | Loads all enquiries into the table on page mount |
+| `src/components/enquiries/EnquiryFormModal.tsx` (create) | `POST /api/enquiries` | Creates an enquiry linked to a lead with branch, course, assignee, date, status, and notes |
+| `src/components/enquiries/EnquiryFormModal.tsx` (edit) | `PUT /api/enquiries/:id` | Updates an existing enquiry |
+| `src/components/enquiries/DeleteEnquiryModal.tsx` | `DELETE /api/enquiries/:id` | Permanently deletes an enquiry after confirmation |
+| `src/pages/enquiries/EnquiriesPage.tsx` | `GET /api/leads`, `GET /api/branches`, `GET /api/courses`, `GET /api/users` | Loads dropdown options; selecting a lead auto-fills branch, course, and assignee on create |
+
 ### API Layer
 
 | File | Role |
@@ -120,12 +130,14 @@ This section documents **what frontend feature connects to which backend API**.
 | `src/services/sectionService.ts` | Section CRUD + activate/deactivate API calls |
 | `src/services/userService.ts` | User CRUD API calls |
 | `src/services/leadService.ts` | Lead CRUD API calls |
+| `src/services/enquiryService.ts` | Enquiry CRUD API calls |
 | `src/types/auth.ts` | TypeScript interfaces for admin and API responses |
 | `src/types/branch.ts` | TypeScript interfaces for branch and API responses |
 | `src/types/course.ts` | TypeScript interfaces for course and API responses |
 | `src/types/section.ts` | TypeScript interfaces for section and API responses |
 | `src/types/user.ts` | TypeScript interfaces for user and API responses |
 | `src/types/lead.ts` | TypeScript interfaces for lead and API responses |
+| `src/types/enquiry.ts` | TypeScript interfaces for enquiry and API responses |
 
 ### Route Protection
 
@@ -207,6 +219,9 @@ frontend/src/
 │   ├── leads/
 │   │   ├── LeadFormModal.tsx      # Create/edit lead modal
 │   │   └── DeleteLeadModal.tsx    # Delete confirmation modal
+│   ├── enquiries/
+│   │   ├── EnquiryFormModal.tsx   # Create/edit enquiry modal
+│   │   └── DeleteEnquiryModal.tsx # Delete confirmation modal
 │   ├── brand/
 │   │   └── Logo.tsx
 │   ├── layout/
@@ -232,6 +247,8 @@ frontend/src/
 │   │   └── UsersPage.tsx          # User list + CRUD UI
 │   ├── leads/
 │   │   └── LeadsPage.tsx          # Lead list + CRUD UI
+│   ├── enquiries/
+│   │   └── EnquiriesPage.tsx      # Enquiry list + CRUD UI
 │   └── PlaceholderPage.tsx        # Placeholder for future pages
 ├── services/
 │   ├── authService.ts             # Auth API service
@@ -239,14 +256,16 @@ frontend/src/
 │   ├── courseService.ts           # Course API service
 │   ├── sectionService.ts          # Section API service
 │   ├── userService.ts             # User API service
-│   └── leadService.ts             # Lead API service
+│   ├── leadService.ts             # Lead API service
+│   └── enquiryService.ts          # Enquiry API service
 ├── types/
 │   ├── auth.ts                    # Auth TypeScript types
 │   ├── branch.ts                  # Branch TypeScript types
 │   ├── course.ts                  # Course TypeScript types
 │   ├── section.ts                 # Section TypeScript types
 │   ├── user.ts                    # User TypeScript types
-│   └── lead.ts                    # Lead TypeScript types
+│   ├── lead.ts                    # Lead TypeScript types
+│   └── enquiry.ts                 # Enquiry TypeScript types
 ├── App.tsx                        # Route definitions
 └── main.tsx                       # App entry with AuthProvider
 ```
@@ -259,7 +278,7 @@ frontend/src/
 |-------|--------|------|
 | `/login` | Guest only | Admin login |
 | `/signup` | Guest only | Admin registration |
-| `/enquiries` | Protected | Default dashboard page |
+| `/enquiries` | Protected | Enquiry management (CRUD) — default landing page |
 | `/dashboard` | Protected | Placeholder |
 | `/leads` | Protected | Lead management (CRUD) |
 | `/students` | Protected | Placeholder |
