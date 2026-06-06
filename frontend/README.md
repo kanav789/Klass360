@@ -1,73 +1,198 @@
-# React + TypeScript + Vite
+# Klass360 Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + TypeScript + Tailwind CSS admin dashboard for the Klass360 education CRM.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Framework:** React 19 + TypeScript
+- **Build tool:** Vite
+- **Styling:** Tailwind CSS v4
+- **Routing:** React Router v7
+- **Icons:** Lucide React
+- **UI:** shadcn-style components (Button, Input, Card, Checkbox, Label)
 
-## React Compiler
+## Getting Started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 1. Install dependencies
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cd frontend
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Environment variables
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cp .env.example .env
 ```
+
+| Variable | Description |
+|----------|-------------|
+| `VITE_API_URL` | Backend API base URL (default: `http://localhost:5000/api`) |
+
+### 3. Run the dev server
+
+```bash
+npm run dev
+```
+
+App runs at `http://localhost:5173`.
+
+> **Backend required:** Start the backend (`npm run dev` in `/backend`) and MongoDB before testing login/signup.
+
+---
+
+## Backend Integration Map
+
+This section documents **what frontend feature connects to which backend API**.
+
+### Authentication
+
+| Frontend Location | Backend API | What It Does |
+|-------------------|-------------|--------------|
+| `src/pages/auth/SignupPage.tsx` | `POST /api/auth/register` | Creates a new admin account with full name, email, and password |
+| `src/pages/auth/LoginPage.tsx` | `POST /api/auth/login` | Signs in admin with email and password; stores JWT token |
+| `src/context/AuthContext.tsx` (on app load) | `GET /api/auth/me` | Validates stored token and restores admin session |
+| `src/components/layout/TopHeader.tsx` | `POST /api/auth/logout` | Logs out admin and clears stored token |
+
+### API Layer
+
+| File | Role |
+|------|------|
+| `src/lib/api.ts` | Base HTTP client — attaches JWT, handles errors, manages token storage |
+| `src/services/authService.ts` | Auth-specific API calls (register, login, getMe, logout) |
+| `src/types/auth.ts` | TypeScript interfaces for admin and API responses |
+
+### Route Protection
+
+| File | Role |
+|------|------|
+| `src/components/auth/ProtectedRoute.tsx` | Blocks unauthenticated users from dashboard routes; redirects to `/login` |
+| `src/components/auth/GuestRoute.tsx` | Blocks authenticated users from `/login` and `/signup`; redirects to `/enquiries` |
+| `src/App.tsx` | Wires protected and guest route groups |
+
+### Token Storage
+
+| Behavior | Storage |
+|----------|---------|
+| "Remember me" checked on login | `localStorage` (`klass360_auth_token`) |
+| "Remember me" unchecked | `sessionStorage` (`klass360_auth_token`) |
+| Logout | Clears both storages |
+
+---
+
+## Auth Flow
+
+```
+App Load
+   │
+   ▼
+AuthProvider checks localStorage / sessionStorage for token
+   │
+   ├── Token found ──► GET /api/auth/me ──► Session restored
+   │                         │
+   │                         └── Invalid token ──► Clear storage, redirect to /login
+   │
+   └── No token ──► User stays on guest routes
+
+Login (/login)
+   │
+   ▼
+POST /api/auth/login
+   │
+   ├── Success ──► Store token ──► Redirect to /enquiries (or previous page)
+   └── Error ──► Show error message on form
+
+Signup (/signup)
+   │
+   ▼
+POST /api/auth/register
+   │
+   ├── Success ──► Store token ──► Redirect to /enquiries
+   └── Error ──► Show error message on form
+
+Logout (header button)
+   │
+   ▼
+POST /api/auth/logout ──► Clear token ──► Redirect to /login
+```
+
+---
+
+## Project Structure
+
+```
+frontend/src/
+├── components/
+│   ├── auth/
+│   │   ├── AuthSplitLayout.tsx    # Split-screen auth layout
+│   │   ├── GuestRoute.tsx         # Redirects logged-in users away from auth pages
+│   │   └── ProtectedRoute.tsx     # Guards dashboard routes
+│   ├── brand/
+│   │   └── Logo.tsx
+│   ├── layout/
+│   │   ├── DashboardLayout.tsx    # Sidebar + header + content shell
+│   │   ├── Sidebar.tsx            # Left navigation
+│   │   └── TopHeader.tsx          # Search, notifications, admin info, logout
+│   └── ui/                        # Reusable UI primitives
+├── context/
+│   └── AuthContext.tsx            # Global auth state and actions
+├── lib/
+│   └── api.ts                     # HTTP client and token helpers
+├── pages/
+│   ├── auth/
+│   │   ├── LoginPage.tsx          # Integrated with POST /auth/login
+│   │   └── SignupPage.tsx         # Integrated with POST /auth/register
+│   └── PlaceholderPage.tsx        # Placeholder for future pages
+├── services/
+│   └── authService.ts             # Auth API service
+├── types/
+│   └── auth.ts                    # Auth TypeScript types
+├── App.tsx                        # Route definitions
+└── main.tsx                       # App entry with AuthProvider
+```
+
+---
+
+## Routes
+
+| Route | Access | Page |
+|-------|--------|------|
+| `/login` | Guest only | Admin login |
+| `/signup` | Guest only | Admin registration |
+| `/enquiries` | Protected | Default dashboard page |
+| `/dashboard` | Protected | Placeholder |
+| `/leads` | Protected | Placeholder |
+| `/students` | Protected | Placeholder |
+| `/fees` | Protected | Placeholder |
+| `/reports` | Protected | Placeholder |
+| `/calendar` | Protected | Placeholder |
+| `/settings` | Protected | Placeholder |
+| `/support` | Protected | Placeholder |
+
+---
+
+## Design System
+
+| Token | Value |
+|-------|-------|
+| Primary Lime Green | `#B6E92E` |
+| Dark Sidebar | `#042F43` |
+| Background | `#F5F7FB` |
+| Primary Text | `#0B2F44` |
+| Secondary Text | `#64748B` |
+| Card Radius | `16px` |
+| Font | Inter |
+
+Defined in `src/index.css` via Tailwind `@theme`.
+
+---
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Type-check and production build |
+| `npm run preview` | Preview production build |
+| `npm run lint` | Run ESLint |
