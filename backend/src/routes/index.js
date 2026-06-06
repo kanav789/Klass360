@@ -8,6 +8,7 @@ const leadRoutes = require('./leadRoutes');
 const enquiryRoutes = require('./enquiryRoutes');
 const admissionRoutes = require('./admissionRoutes');
 const studentRoutes = require('./studentRoutes');
+const feeRoutes = require('./feeRoutes');
 
 const router = express.Router();
 
@@ -28,5 +29,6 @@ router.use('/leads', leadRoutes);
 router.use('/enquiries', enquiryRoutes);
 router.use('/admissions', admissionRoutes);
 router.use('/students', studentRoutes);
+router.use('/fees', feeRoutes);
 
 module.exports = router;

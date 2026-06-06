@@ -11,6 +11,8 @@ import { AdmissionsPage } from '@/pages/admissions/AdmissionsPage'
 import { EnquiriesPage } from '@/pages/enquiries/EnquiriesPage'
 import { LeadsPage } from '@/pages/leads/LeadsPage'
 import { StudentsPage } from '@/pages/students/StudentsPage'
+import { DashboardPage } from '@/pages/dashboard/DashboardPage'
+import { FeesPage } from '@/pages/fees/FeesPage'
 import { UsersPage } from '@/pages/users/UsersPage'
 import { PlaceholderPage } from '@/pages/PlaceholderPage'
 
@@ -26,15 +28,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
             <Route path="/" element={<Navigate to="/enquiries" replace />} />
-            <Route
-              path="/dashboard"
-              element={
-                <PlaceholderPage
-                  title="Dashboard"
-                  description="Overview of your institution's key metrics and activity."
-                />
-              }
-            />
+            <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/leads" element={<LeadsPage />} />
             <Route path="/enquiries" element={<EnquiriesPage />} />
             <Route path="/admissions" element={<AdmissionsPage />} />
@@ -44,15 +38,7 @@ function App() {
             <Route path="/batches" element={<SectionsPage />} />
             <Route path="/sections" element={<Navigate to="/batches" replace />} />
             <Route path="/users" element={<UsersPage />} />
-            <Route
-              path="/fees"
-              element={
-                <PlaceholderPage
-                  title="Fees"
-                  description="Fee collection, tracking, and management."
-                />
-              }
-            />
+            <Route path="/fees" element={<FeesPage />} />
             <Route
               path="/reports"
               element={

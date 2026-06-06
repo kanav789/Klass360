@@ -966,6 +966,70 @@ Students are created automatically via admissions. These endpoints are read-only
 
 ---
 
+### Fee Management
+
+> **Auth required:** All fee endpoints require a valid admin JWT token.
+
+One fee record per admission. `discount` and `netFee` are pulled from the linked admission. `pendingAmount` and `status` are calculated automatically.
+
+#### Create Fee Record
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/fees` | Yes | Create a fee record for an admission |
+
+**Request body:**
+
+```json
+{
+  "admissionId": "admissionMongoId",
+  "paidAmount": 5000
+}
+```
+
+**Validation rules:**
+- `admissionId` — required, valid admission ID (one fee record per admission)
+- `paidAmount` — required, non-negative; cannot exceed admission `netFee`
+- `discount`, `netFee` — auto-filled from admission
+- `pendingAmount` — calculated as `netFee - paidAmount`
+- `status` — auto-set: `pending` (₹0 paid), `partial` (partially paid), `paid` (fully paid)
+
+---
+
+#### Get All Fee Records
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/fees` | Yes | List all fee records with populated admission details |
+
+---
+
+#### Get Fee Record by ID
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/fees/:id` | Yes | Get a single fee record by MongoDB ID |
+
+---
+
+#### Update Fee Record
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `PUT` | `/fees/:id` | Yes | Update paid amount; re-syncs discount/netFee from admission |
+
+**Request body:** Same fields as create.
+
+---
+
+#### Delete Fee Record
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `DELETE` | `/fees/:id` | Yes | Permanently delete a fee record |
+
+---
+
 ## Project Structure
 
 ```
@@ -982,7 +1046,8 @@ backend/
 │   │   ├── leadController.js    # Lead CRUD logic
 │   │   ├── enquiryController.js # Enquiry CRUD logic
 │   │   ├── admissionController.js # Admission CRUD + student auto-create
-│   │   └── studentController.js # Student read-only logic
+│   │   ├── studentController.js # Student read-only logic
+│   │   └── feeController.js     # Fee CRUD logic
 │   ├── middleware/
 │   │   ├── auth.js            # JWT authentication guard
 │   │   ├── errorHandler.js    # Global error handler
@@ -996,7 +1061,8 @@ backend/
 │   │   ├── Lead.js            # Lead Mongoose schema
 │   │   ├── Enquiry.js         # Enquiry Mongoose schema
 │   │   ├── Admission.js       # Admission Mongoose schema
-│   │   └── Student.js         # Student Mongoose schema
+│   │   ├── Student.js         # Student Mongoose schema
+│   │   └── Fee.js             # Fee Mongoose schema
 │   ├── routes/
 │   │   ├── authRoutes.js      # /api/auth/* routes
 │   │   ├── branchRoutes.js    # /api/branches/* routes
@@ -1007,6 +1073,7 @@ backend/
 │   │   ├── enquiryRoutes.js   # /api/enquiries/* routes
 │   │   ├── admissionRoutes.js # /api/admissions/* routes
 │   │   ├── studentRoutes.js   # /api/students/* routes
+│   │   ├── feeRoutes.js       # /api/fees/* routes
 │   │   └── index.js           # Route aggregator
 │   ├── utils/
 │   │   ├── AppError.js        # Custom error class
@@ -1021,7 +1088,8 @@ backend/
 │   │   ├── leadValidator.js    # Lead validation rules
 │   │   ├── enquiryValidator.js # Enquiry validation rules
 │   │   ├── admissionValidator.js # Admission validation rules
-│   │   └── studentValidator.js # Student validation rules
+│   │   ├── studentValidator.js # Student validation rules
+│   │   └── feeValidator.js      # Fee validation rules
 │   ├── app.js                 # Express app setup
 │   └── server.js              # Entry point
 ├── .env.example

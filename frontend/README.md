@@ -137,6 +137,16 @@ This section documents **what frontend feature connects to which backend API**.
 |-------------------|-------------|--------------|
 | `src/pages/students/StudentsPage.tsx` | `GET /api/students` | Read-only listing of students created from admissions |
 
+### Fee Management
+
+| Frontend Location | Backend API | What It Does |
+|-------------------|-------------|--------------|
+| `src/pages/fees/FeesPage.tsx` | `GET /api/fees` | Loads all fee records into the table on page mount |
+| `src/components/fees/FeeFormModal.tsx` (create) | `POST /api/fees` | Creates fee record; discount and net fee auto-filled from admission |
+| `src/components/fees/FeeFormModal.tsx` (edit) | `PUT /api/fees/:id` | Updates paid amount; pending amount and status recalculated |
+| `src/components/fees/DeleteFeeModal.tsx` | `DELETE /api/fees/:id` | Permanently deletes a fee record after confirmation |
+| `src/pages/fees/FeesPage.tsx` | `GET /api/admissions` | Loads admissions for the fee form dropdown |
+
 ### API Layer
 
 | File | Role |
@@ -151,6 +161,7 @@ This section documents **what frontend feature connects to which backend API**.
 | `src/services/enquiryService.ts` | Enquiry CRUD API calls |
 | `src/services/admissionService.ts` | Admission CRUD API calls |
 | `src/services/studentService.ts` | Student read-only API calls |
+| `src/services/feeService.ts` | Fee CRUD API calls |
 | `src/types/auth.ts` | TypeScript interfaces for admin and API responses |
 | `src/types/branch.ts` | TypeScript interfaces for branch and API responses |
 | `src/types/course.ts` | TypeScript interfaces for course and API responses |
@@ -160,6 +171,7 @@ This section documents **what frontend feature connects to which backend API**.
 | `src/types/enquiry.ts` | TypeScript interfaces for enquiry and API responses |
 | `src/types/admission.ts` | TypeScript interfaces for admission and API responses |
 | `src/types/student.ts` | TypeScript interfaces for student and API responses |
+| `src/types/fee.ts` | TypeScript interfaces for fee and API responses |
 
 ### Route Protection
 
@@ -310,7 +322,7 @@ frontend/src/
 | `/batches` | Protected | Batch management (CRUD + activate/deactivate) |
 | `/sections` | Protected | Redirects to `/batches` |
 | `/users` | Protected | User management (CRUD) |
-| `/fees` | Protected | Placeholder |
+| `/fees` | Protected | Fee management (CRUD) |
 | `/reports` | Protected | Placeholder |
 | `/calendar` | Protected | Placeholder |
 | `/settings` | Protected | Placeholder |

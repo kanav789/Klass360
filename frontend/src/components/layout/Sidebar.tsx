@@ -6,18 +6,14 @@ import {
   ClipboardCheck,
   GraduationCap,
   Wallet,
-  BarChart3,
-  Calendar,
   Building2,
   BookOpen,
   Layers,
   UserCog,
   Settings,
   Headphones,
-  Plus,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
 
 const mainNavItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
@@ -30,8 +26,8 @@ const mainNavItems = [
   { label: 'Batches', icon: Layers, path: '/batches' },
   { label: 'Users', icon: UserCog, path: '/users' },
   { label: 'Fees', icon: Wallet, path: '/fees' },
-  { label: 'Reports', icon: BarChart3, path: '/reports' },
-  { label: 'Calendar', icon: Calendar, path: '/calendar' },
+  // { label: 'Reports', icon: BarChart3, path: '/reports' },
+  // { label: 'Calendar', icon: Calendar, path: '/calendar' },
 ]
 
 const bottomNavItems = [
@@ -52,14 +48,6 @@ export function Sidebar() {
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          size="lg"
-          className="w-full gap-2 rounded-xl font-bold"
-        >
-          <Plus className="h-5 w-5" strokeWidth={2.5} />
-          New Enquiry
-        </Button>
 
         <nav className="flex flex-col gap-1">
           {mainNavItems.map((item) => (
