@@ -77,11 +77,13 @@ This section documents **what frontend feature connects to which backend API**.
 | `src/components/courses/DeleteCourseModal.tsx` | `DELETE /api/courses/:id` | Permanently deletes a course after confirmation |
 | `src/pages/courses/CoursesPage.tsx` | `GET /api/branches` | Loads active branches for course assignment in the form |
 
-### Section Management
+### Batch Management
+
+> **Note:** Batch and Section are the same. The sidebar shows **Batches** (`/batches`). Backend supports both `/api/batches` and `/api/sections`.
 
 | Frontend Location | Backend API | What It Does |
 |-------------------|-------------|--------------|
-| `src/pages/sections/SectionsPage.tsx` | `GET /api/sections` | Loads all sections into the table on page mount |
+| `src/pages/sections/SectionsPage.tsx` | `GET /api/sections` | Loads all batches into the table on page mount |
 | `src/components/sections/SectionFormModal.tsx` (create) | `POST /api/sections` | Creates a section with name, course, branch, dates, and status |
 | `src/components/sections/SectionFormModal.tsx` (edit) | `PUT /api/sections/:id` | Updates an existing section |
 | `src/pages/sections/SectionsPage.tsx` (activate) | `PATCH /api/sections/:id/activate` | Activates a section |
@@ -119,6 +121,22 @@ This section documents **what frontend feature connects to which backend API**.
 | `src/components/enquiries/DeleteEnquiryModal.tsx` | `DELETE /api/enquiries/:id` | Permanently deletes an enquiry after confirmation |
 | `src/pages/enquiries/EnquiriesPage.tsx` | `GET /api/leads`, `GET /api/branches`, `GET /api/courses`, `GET /api/users` | Loads dropdown options; selecting a lead auto-fills branch, course, and assignee on create |
 
+### Admission Management
+
+| Frontend Location | Backend API | What It Does |
+|-------------------|-------------|--------------|
+| `src/pages/admissions/AdmissionsPage.tsx` | `GET /api/admissions` | Loads all admissions into the table on page mount |
+| `src/components/admissions/AdmissionFormModal.tsx` (create) | `POST /api/admissions` | Creates admission from enquiry; auto-creates linked student |
+| `src/components/admissions/AdmissionFormModal.tsx` (edit) | `PUT /api/admissions/:id` | Updates admission and syncs student details |
+| `src/components/admissions/DeleteAdmissionModal.tsx` | `DELETE /api/admissions/:id` | Deletes admission and linked student after confirmation |
+| `src/pages/admissions/AdmissionsPage.tsx` | `GET /api/enquiries`, `GET /api/branches`, `GET /api/courses`, `GET /api/sections` | Loads dropdown options; selecting enquiry auto-fills lead, branch, and course |
+
+### Student Directory
+
+| Frontend Location | Backend API | What It Does |
+|-------------------|-------------|--------------|
+| `src/pages/students/StudentsPage.tsx` | `GET /api/students` | Read-only listing of students created from admissions |
+
 ### API Layer
 
 | File | Role |
@@ -131,6 +149,8 @@ This section documents **what frontend feature connects to which backend API**.
 | `src/services/userService.ts` | User CRUD API calls |
 | `src/services/leadService.ts` | Lead CRUD API calls |
 | `src/services/enquiryService.ts` | Enquiry CRUD API calls |
+| `src/services/admissionService.ts` | Admission CRUD API calls |
+| `src/services/studentService.ts` | Student read-only API calls |
 | `src/types/auth.ts` | TypeScript interfaces for admin and API responses |
 | `src/types/branch.ts` | TypeScript interfaces for branch and API responses |
 | `src/types/course.ts` | TypeScript interfaces for course and API responses |
@@ -138,6 +158,8 @@ This section documents **what frontend feature connects to which backend API**.
 | `src/types/user.ts` | TypeScript interfaces for user and API responses |
 | `src/types/lead.ts` | TypeScript interfaces for lead and API responses |
 | `src/types/enquiry.ts` | TypeScript interfaces for enquiry and API responses |
+| `src/types/admission.ts` | TypeScript interfaces for admission and API responses |
+| `src/types/student.ts` | TypeScript interfaces for student and API responses |
 
 ### Route Protection
 
@@ -279,12 +301,14 @@ frontend/src/
 | `/login` | Guest only | Admin login |
 | `/signup` | Guest only | Admin registration |
 | `/enquiries` | Protected | Enquiry management (CRUD) — default landing page |
+| `/admissions` | Protected | Admission management (CRUD) |
 | `/dashboard` | Protected | Placeholder |
 | `/leads` | Protected | Lead management (CRUD) |
-| `/students` | Protected | Placeholder |
+| `/students` | Protected | Student directory (read-only listing) |
 | `/branches` | Protected | Branch management (CRUD) |
 | `/courses` | Protected | Course management (CRUD + activate/deactivate) |
-| `/sections` | Protected | Section management (CRUD + activate/deactivate) |
+| `/batches` | Protected | Batch management (CRUD + activate/deactivate) |
+| `/sections` | Protected | Redirects to `/batches` |
 | `/users` | Protected | User management (CRUD) |
 | `/fees` | Protected | Placeholder |
 | `/reports` | Protected | Placeholder |

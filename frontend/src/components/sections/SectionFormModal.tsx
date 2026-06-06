@@ -103,10 +103,10 @@ export function SectionFormModal({
         <div className="mb-6 flex items-start justify-between">
           <div>
             <h2 className="text-xl font-bold text-primary">
-              {mode === 'create' ? 'Create Section' : 'Edit Section'}
+              {mode === 'create' ? 'Create Batch' : 'Edit Batch'}
             </h2>
             <p className="mt-1 text-sm text-secondary">
-              Link a course to a branch with a schedule and status.
+              Create a batch by linking a course to a branch with a schedule.
             </p>
           </div>
           <button
@@ -128,7 +128,7 @@ export function SectionFormModal({
 
           <div className="space-y-2">
             <Label htmlFor="section-name">
-              Section Name <span className="text-danger">*</span>
+              Batch Name <span className="text-danger">*</span>
             </Label>
             <Input
               id="section-name"
@@ -265,7 +265,7 @@ export function SectionFormModal({
                   Saving...
                 </>
               ) : mode === 'create' ? (
-                'Create Section'
+                'Create Batch'
               ) : (
                 'Save Changes'
               )}

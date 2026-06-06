@@ -7,8 +7,10 @@ import { SignupPage } from '@/pages/auth/SignupPage'
 import { BranchesPage } from '@/pages/branches/BranchesPage'
 import { CoursesPage } from '@/pages/courses/CoursesPage'
 import { SectionsPage } from '@/pages/sections/SectionsPage'
+import { AdmissionsPage } from '@/pages/admissions/AdmissionsPage'
 import { EnquiriesPage } from '@/pages/enquiries/EnquiriesPage'
 import { LeadsPage } from '@/pages/leads/LeadsPage'
+import { StudentsPage } from '@/pages/students/StudentsPage'
 import { UsersPage } from '@/pages/users/UsersPage'
 import { PlaceholderPage } from '@/pages/PlaceholderPage'
 
@@ -35,18 +37,12 @@ function App() {
             />
             <Route path="/leads" element={<LeadsPage />} />
             <Route path="/enquiries" element={<EnquiriesPage />} />
-            <Route
-              path="/students"
-              element={
-                <PlaceholderPage
-                  title="Students"
-                  description="Student profiles and lifecycle management."
-                />
-              }
-            />
+            <Route path="/admissions" element={<AdmissionsPage />} />
+            <Route path="/students" element={<StudentsPage />} />
             <Route path="/branches" element={<BranchesPage />} />
             <Route path="/courses" element={<CoursesPage />} />
-            <Route path="/sections" element={<SectionsPage />} />
+            <Route path="/batches" element={<SectionsPage />} />
+            <Route path="/sections" element={<Navigate to="/batches" replace />} />
             <Route path="/users" element={<UsersPage />} />
             <Route
               path="/fees"

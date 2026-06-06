@@ -207,19 +207,19 @@ export function SectionsPage() {
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-lime/15 px-3 py-1 text-xs font-semibold text-primary">
             <Layers className="h-3.5 w-3.5" />
-            Branch Sections
+            Batch Management
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-primary">
-            Sections
+            Batches
           </h1>
           <p className="mt-2 text-secondary">
-            Manage course sections scheduled at specific branches.
+            Manage course batches scheduled at specific branches.
           </p>
         </div>
 
         <Button variant="primary" size="lg" onClick={openCreateModal}>
           <Plus className="h-5 w-5" />
-          Add Section
+          Add Batch
         </Button>
       </div>
 
@@ -229,15 +229,15 @@ export function SectionsPage() {
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary" />
               <Input
-                placeholder="Search sections..."
+                placeholder="Search batches..."
                 className="pl-11"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
             <p className="text-sm text-secondary">
-              {filteredSections.length} section
-              {filteredSections.length !== 1 ? 's' : ''} found
+              {filteredSections.length} batch
+              {filteredSections.length !== 1 ? 'es' : ''} found
             </p>
           </div>
 
@@ -257,12 +257,12 @@ export function SectionsPage() {
                 <Layers className="h-7 w-7 text-primary" />
               </div>
               <h3 className="text-lg font-semibold text-primary">
-                {search ? 'No sections match your search' : 'No sections yet'}
+                {search ? 'No batches match your search' : 'No batches yet'}
               </h3>
               <p className="mt-2 max-w-sm text-sm text-secondary">
                 {search
                   ? 'Try a different search term.'
-                  : 'Create your first section to link a course with a branch.'}
+                  : 'Create your first batch to link a course with a branch.'}
               </p>
               {!search && (
                 <Button
@@ -271,7 +271,7 @@ export function SectionsPage() {
                   onClick={openCreateModal}
                 >
                   <Plus className="h-4 w-4" />
-                  Add Section
+                  Add Batch
                 </Button>
               )}
             </div>
@@ -281,7 +281,7 @@ export function SectionsPage() {
                 <table className="w-full min-w-[1100px] text-left text-sm">
                   <thead className="sticky top-0 bg-background text-secondary">
                     <tr className="border-b border-border/60">
-                      <th className="px-5 py-4 font-semibold">Section Name</th>
+                      <th className="px-5 py-4 font-semibold">Batch Name</th>
                       <th className="px-5 py-4 font-semibold">Course</th>
                       <th className="px-5 py-4 font-semibold">Branch</th>
                       <th className="px-5 py-4 font-semibold">Start Date</th>

@@ -528,11 +528,13 @@ Authorization: Bearer <jwt_token>
 
 ---
 
-### Section Management (Branch Sections)
+### Batch / Section Management
 
-> **Auth required:** All section endpoints require a valid admin JWT token.
+> **Auth required:** All batch/section endpoints require a valid admin JWT token.
 
-Sections link a **course** to a **branch** with a schedule. The selected branch must be assigned to the selected course.
+> **Note:** **Batch** and **Section** are the same entity. Use `/api/batches` or `/api/sections` — both routes are identical. Admissions reference this via `batchId`.
+
+Batches (sections) link a **course** to a **branch** with a schedule. The selected branch must be assigned to the selected course.
 
 #### Create Section
 
@@ -865,6 +867,105 @@ Sections link a **course** to a **branch** with a schedule. The selected branch 
 
 ---
 
+### Admission Management
+
+> **Auth required:** All admission endpoints require a valid admin JWT token.
+
+Creating an admission automatically creates a linked student profile from the lead data.
+
+#### Create Admission
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/admissions` | Yes | Create admission and auto-generate student |
+
+**Request body:**
+
+```json
+{
+  "enquiryId": "enquiryMongoId",
+  "leadId": "leadMongoId",
+  "courseId": "courseMongoId",
+  "branchId": "branchMongoId",
+  "batchId": "sectionMongoId",
+  "admissionDate": "2026-06-06",
+  "totalFee": 50000,
+  "discount": 5000,
+  "status": "pending",
+  "email": "student@email.com",
+  "qualification": "12th Pass"
+}
+```
+
+**Validation rules:**
+- `enquiryId` — required, valid enquiry ID (one admission per enquiry)
+- `leadId`, `courseId`, `branchId` — required, must match the selected enquiry
+- `batchId` — required, valid batch/section ID matching course and branch
+- `admissionDate` — required, valid ISO date
+- `totalFee` — required, non-negative number
+- `discount` — optional, non-negative; cannot exceed `totalFee`
+- `netFee` — calculated server-side as `totalFee - discount`
+- `status` — required, one of: `pending`, `confirmed`, `active`, `cancelled`
+- `email`, `qualification` — optional; stored on the auto-created student
+
+---
+
+#### Get All Admissions
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/admissions` | Yes | List all admissions with populated refs |
+
+---
+
+#### Get Admission by ID
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/admissions/:id` | Yes | Get a single admission by MongoDB ID |
+
+---
+
+#### Update Admission
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `PUT` | `/admissions/:id` | Yes | Update admission and sync linked student |
+
+**Request body:** Same fields as create.
+
+---
+
+#### Delete Admission
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `DELETE` | `/admissions/:id` | Yes | Delete admission and linked student |
+
+---
+
+### Student Management
+
+> **Auth required:** All student endpoints require a valid admin JWT token.
+
+Students are created automatically via admissions. These endpoints are read-only.
+
+#### Get All Students
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/students` | Yes | List all students with populated branch and lead |
+
+---
+
+#### Get Student by ID
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/students/:id` | Yes | Get a single student by MongoDB ID |
+
+---
+
 ## Project Structure
 
 ```
@@ -879,7 +980,9 @@ backend/
 │   │   ├── sectionController.js # Section CRUD logic
 │   │   ├── userController.js    # User CRUD logic
 │   │   ├── leadController.js    # Lead CRUD logic
-│   │   └── enquiryController.js # Enquiry CRUD logic
+│   │   ├── enquiryController.js # Enquiry CRUD logic
+│   │   ├── admissionController.js # Admission CRUD + student auto-create
+│   │   └── studentController.js # Student read-only logic
 │   ├── middleware/
 │   │   ├── auth.js            # JWT authentication guard
 │   │   ├── errorHandler.js    # Global error handler
@@ -891,7 +994,9 @@ backend/
 │   │   ├── Section.js         # Section Mongoose schema
 │   │   ├── User.js            # User Mongoose schema
 │   │   ├── Lead.js            # Lead Mongoose schema
-│   │   └── Enquiry.js         # Enquiry Mongoose schema
+│   │   ├── Enquiry.js         # Enquiry Mongoose schema
+│   │   ├── Admission.js       # Admission Mongoose schema
+│   │   └── Student.js         # Student Mongoose schema
 │   ├── routes/
 │   │   ├── authRoutes.js      # /api/auth/* routes
 │   │   ├── branchRoutes.js    # /api/branches/* routes
@@ -900,6 +1005,8 @@ backend/
 │   │   ├── userRoutes.js      # /api/users/* routes
 │   │   ├── leadRoutes.js      # /api/leads/* routes
 │   │   ├── enquiryRoutes.js   # /api/enquiries/* routes
+│   │   ├── admissionRoutes.js # /api/admissions/* routes
+│   │   ├── studentRoutes.js   # /api/students/* routes
 │   │   └── index.js           # Route aggregator
 │   ├── utils/
 │   │   ├── AppError.js        # Custom error class
@@ -912,7 +1019,9 @@ backend/
 │   │   ├── sectionValidator.js # Section validation rules
 │   │   ├── userValidator.js    # User validation rules
 │   │   ├── leadValidator.js    # Lead validation rules
-│   │   └── enquiryValidator.js # Enquiry validation rules
+│   │   ├── enquiryValidator.js # Enquiry validation rules
+│   │   ├── admissionValidator.js # Admission validation rules
+│   │   └── studentValidator.js # Student validation rules
 │   ├── app.js                 # Express app setup
 │   └── server.js              # Entry point
 ├── .env.example

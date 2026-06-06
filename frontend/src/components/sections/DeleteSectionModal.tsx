@@ -27,7 +27,7 @@ export function DeleteSectionModal({
       />
 
       <div className="relative w-full max-w-md rounded-[var(--radius-card)] border border-border/60 bg-card p-6 shadow-[var(--shadow-card-hover)]">
-        <h2 className="text-xl font-bold text-primary">Delete Section</h2>
+        <h2 className="text-xl font-bold text-primary">Delete Batch</h2>
         <p className="mt-3 text-sm leading-relaxed text-secondary">
           Are you sure you want to delete{' '}
           <span className="font-semibold text-primary">{section.name}</span>?
@@ -55,7 +55,7 @@ export function DeleteSectionModal({
                 Deleting...
               </>
             ) : (
-              'Delete Section'
+              'Delete Batch'
             )}
           </Button>
         </div>

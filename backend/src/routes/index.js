@@ -6,6 +6,8 @@ const sectionRoutes = require('./sectionRoutes');
 const userRoutes = require('./userRoutes');
 const leadRoutes = require('./leadRoutes');
 const enquiryRoutes = require('./enquiryRoutes');
+const admissionRoutes = require('./admissionRoutes');
+const studentRoutes = require('./studentRoutes');
 
 const router = express.Router();
 
@@ -20,8 +22,11 @@ router.use('/auth', authRoutes);
 router.use('/branches', branchRoutes);
 router.use('/courses', courseRoutes);
 router.use('/sections', sectionRoutes);
+router.use('/batches', sectionRoutes);
 router.use('/users', userRoutes);
 router.use('/leads', leadRoutes);
 router.use('/enquiries', enquiryRoutes);
+router.use('/admissions', admissionRoutes);
+router.use('/students', studentRoutes);
 
 module.exports = router;
