@@ -7,26 +7,64 @@ const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const formatBranch = (branch) => ({
   id: branch._id,
   name: branch.name,
+  code: branch.code,
   address: branch.address,
+  city: branch.city,
+  state: branch.state,
+  status: branch.status,
   createdBy: branch.createdBy,
   createdAt: branch.createdAt,
   updatedAt: branch.updatedAt,
 });
 
-const createBranch = asyncHandler(async (req, res) => {
-  const { name, address } = req.body;
+const findDuplicateBranch = async ({ name, code, excludeId }) => {
+  const filters = [];
 
-  const existingBranch = await Branch.findOne({
-    name: { $regex: new RegExp(`^${escapeRegex(name)}$`, 'i') },
-  });
+  if (name) {
+    filters.push({
+      name: { $regex: new RegExp(`^${escapeRegex(name)}$`, 'i') },
+    });
+  }
+
+  if (code) {
+    filters.push({
+      code: { $regex: new RegExp(`^${escapeRegex(code)}$`, 'i') },
+    });
+  }
+
+  if (filters.length === 0) {
+    return null;
+  }
+
+  const query = { $or: filters };
+
+  if (excludeId) {
+    query._id = { $ne: excludeId };
+  }
+
+  return Branch.findOne(query);
+};
+
+const createBranch = asyncHandler(async (req, res) => {
+  const { name, code, address, city, state, status = 'active' } = req.body;
+
+  const existingBranch = await findDuplicateBranch({ name, code });
 
   if (existingBranch) {
-    throw new AppError('A branch with this name already exists', 409);
+    if (existingBranch.name.toLowerCase() === name.toLowerCase()) {
+      throw new AppError('A branch with this name already exists', 409);
+    }
+
+    throw new AppError('A branch with this code already exists', 409);
   }
 
   const branch = await Branch.create({
     name,
+    code: code.toUpperCase(),
     address,
+    city,
+    state,
+    status,
     createdBy: req.admin._id,
   });
 
@@ -63,7 +101,7 @@ const getBranchById = asyncHandler(async (req, res) => {
 });
 
 const updateBranch = asyncHandler(async (req, res) => {
-  const { name, address } = req.body;
+  const { name, code, address, city, state, status } = req.body;
 
   const branch = await Branch.findById(req.params.id);
 
@@ -71,19 +109,32 @@ const updateBranch = asyncHandler(async (req, res) => {
     throw new AppError('Branch not found', 404);
   }
 
-  if (name && name.toLowerCase() !== branch.name.toLowerCase()) {
-    const existingBranch = await Branch.findOne({
-      name: { $regex: new RegExp(`^${escapeRegex(name)}$`, 'i') },
-      _id: { $ne: branch._id },
+  const nameChanged = name && name.toLowerCase() !== branch.name.toLowerCase();
+  const codeChanged =
+    code && code.toUpperCase() !== branch.code.toUpperCase();
+
+  if (nameChanged || codeChanged) {
+    const existingBranch = await findDuplicateBranch({
+      name: nameChanged ? name : undefined,
+      code: codeChanged ? code : undefined,
+      excludeId: branch._id,
     });
 
     if (existingBranch) {
-      throw new AppError('A branch with this name already exists', 409);
+      if (nameChanged && existingBranch.name.toLowerCase() === name.toLowerCase()) {
+        throw new AppError('A branch with this name already exists', 409);
+      }
+
+      throw new AppError('A branch with this code already exists', 409);
     }
   }
 
   branch.name = name ?? branch.name;
+  branch.code = code ? code.toUpperCase() : branch.code;
   branch.address = address ?? branch.address;
+  branch.city = city ?? branch.city;
+  branch.state = state ?? branch.state;
+  branch.status = status ?? branch.status;
   await branch.save();
 
   res.status(200).json({

@@ -1,7 +1,13 @@
+export type BranchStatus = 'active' | 'inactive'
+
 export interface Branch {
   id: string
   name: string
+  code: string
   address: string
+  city: string
+  state: string
+  status: BranchStatus
   createdBy: string
   createdAt: string
   updatedAt: string
@@ -25,5 +31,9 @@ export interface BranchResponse {
 
 export interface BranchPayload {
   name: string
+  code: string
   address: string
+  city: string
+  state: string
+  status: BranchStatus
 }

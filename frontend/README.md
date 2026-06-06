@@ -60,10 +60,22 @@ This section documents **what frontend feature connects to which backend API**.
 | Frontend Location | Backend API | What It Does |
 |-------------------|-------------|--------------|
 | `src/pages/branches/BranchesPage.tsx` | `GET /api/branches` | Loads all branches into the table on page mount |
-| `src/components/branches/BranchFormModal.tsx` (create) | `POST /api/branches` | Creates a new branch with entity name and address |
-| `src/components/branches/BranchFormModal.tsx` (edit) | `PUT /api/branches/:id` | Updates an existing branch's name and address |
+| `src/components/branches/BranchFormModal.tsx` (create) | `POST /api/branches` | Creates a branch with name, code, address, city, state, and status |
+| `src/components/branches/BranchFormModal.tsx` (edit) | `PUT /api/branches/:id` | Updates branch name, code, address, city, state, and status |
 | `src/components/branches/DeleteBranchModal.tsx` | `DELETE /api/branches/:id` | Permanently deletes a branch after confirmation |
 | `src/services/branchService.ts` | `GET /api/branches/:id` | Available for fetching a single branch (used by service layer) |
+
+### Course Management
+
+| Frontend Location | Backend API | What It Does |
+|-------------------|-------------|--------------|
+| `src/pages/courses/CoursesPage.tsx` | `GET /api/courses` | Loads all courses into the table on page mount |
+| `src/components/courses/CourseFormModal.tsx` (create) | `POST /api/courses` | Creates a course with name, category, duration, description, branches, and status |
+| `src/components/courses/CourseFormModal.tsx` (edit) | `PUT /api/courses/:id` | Updates an existing course |
+| `src/pages/courses/CoursesPage.tsx` (activate) | `PATCH /api/courses/:id/activate` | Activates a course |
+| `src/pages/courses/CoursesPage.tsx` (deactivate) | `PATCH /api/courses/:id/deactivate` | Deactivates a course |
+| `src/components/courses/DeleteCourseModal.tsx` | `DELETE /api/courses/:id` | Permanently deletes a course after confirmation |
+| `src/pages/courses/CoursesPage.tsx` | `GET /api/branches` | Loads active branches for course assignment in the form |
 
 ### API Layer
 
@@ -72,8 +84,10 @@ This section documents **what frontend feature connects to which backend API**.
 | `src/lib/api.ts` | Base HTTP client — attaches JWT, handles errors, manages token storage |
 | `src/services/authService.ts` | Auth-specific API calls (register, login, getMe, logout) |
 | `src/services/branchService.ts` | Branch CRUD API calls (getAll, getById, create, update, delete) |
+| `src/services/courseService.ts` | Course CRUD + activate/deactivate API calls |
 | `src/types/auth.ts` | TypeScript interfaces for admin and API responses |
 | `src/types/branch.ts` | TypeScript interfaces for branch and API responses |
+| `src/types/course.ts` | TypeScript interfaces for course and API responses |
 
 ### Route Protection
 
@@ -143,6 +157,9 @@ frontend/src/
 │   ├── branches/
 │   │   ├── BranchFormModal.tsx    # Create/edit branch modal
 │   │   └── DeleteBranchModal.tsx  # Delete confirmation modal
+│   ├── courses/
+│   │   ├── CourseFormModal.tsx    # Create/edit course modal
+│   │   └── DeleteCourseModal.tsx  # Delete confirmation modal
 │   ├── brand/
 │   │   └── Logo.tsx
 │   ├── layout/
@@ -160,13 +177,17 @@ frontend/src/
 │   │   └── SignupPage.tsx         # Integrated with POST /auth/register
 │   ├── branches/
 │   │   └── BranchesPage.tsx       # Branch list + CRUD UI
+│   ├── courses/
+│   │   └── CoursesPage.tsx        # Course list + CRUD UI
 │   └── PlaceholderPage.tsx        # Placeholder for future pages
 ├── services/
 │   ├── authService.ts             # Auth API service
-│   └── branchService.ts           # Branch API service
+│   ├── branchService.ts           # Branch API service
+│   └── courseService.ts           # Course API service
 ├── types/
 │   ├── auth.ts                    # Auth TypeScript types
-│   └── branch.ts                  # Branch TypeScript types
+│   ├── branch.ts                  # Branch TypeScript types
+│   └── course.ts                  # Course TypeScript types
 ├── App.tsx                        # Route definitions
 └── main.tsx                       # App entry with AuthProvider
 ```
@@ -184,6 +205,7 @@ frontend/src/
 | `/leads` | Protected | Placeholder |
 | `/students` | Protected | Placeholder |
 | `/branches` | Protected | Branch management (CRUD) |
+| `/courses` | Protected | Course management (CRUD + activate/deactivate) |
 | `/fees` | Protected | Placeholder |
 | `/reports` | Protected | Placeholder |
 | `/calendar` | Protected | Placeholder |

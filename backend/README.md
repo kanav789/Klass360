@@ -250,14 +250,22 @@ Authorization: Bearer <jwt_token>
 
 ```json
 {
-  "name": "Klass360 Delhi Campus",
-  "address": "123 Education Lane, Connaught Place, New Delhi, 110001"
+  "name": "Delhi Campus",
+  "code": "DEL-01",
+  "address": "123 Education Lane, Connaught Place",
+  "city": "New Delhi",
+  "state": "Delhi",
+  "status": "active"
 }
 ```
 
 **Validation rules:**
 - `name` — required, max 150 characters, must be unique (case-insensitive)
+- `code` — required, max 20 characters, letters/numbers/hyphens only, must be unique (stored uppercase)
 - `address` — required, max 500 characters
+- `city` — required, max 100 characters
+- `state` — required, max 100 characters
+- `status` — optional, `active` or `inactive` (defaults to `active`)
 
 **Success response (201):**
 
@@ -268,8 +276,12 @@ Authorization: Bearer <jwt_token>
   "data": {
     "branch": {
       "id": "...",
-      "name": "Klass360 Delhi Campus",
-      "address": "123 Education Lane, Connaught Place, New Delhi, 110001",
+      "name": "Delhi Campus",
+      "code": "DEL-01",
+      "address": "123 Education Lane, Connaught Place",
+      "city": "New Delhi",
+      "state": "Delhi",
+      "status": "active",
       "createdBy": "...",
       "createdAt": "2026-06-06T...",
       "updatedAt": "2026-06-06T..."
@@ -297,8 +309,12 @@ Authorization: Bearer <jwt_token>
     "branches": [
       {
         "id": "...",
-        "name": "Klass360 Delhi Campus",
-        "address": "123 Education Lane, Connaught Place, New Delhi, 110001",
+        "name": "Delhi Campus",
+        "code": "DEL-01",
+        "address": "123 Education Lane, Connaught Place",
+        "city": "New Delhi",
+        "state": "Delhi",
+        "status": "active",
         "createdBy": "...",
         "createdAt": "2026-06-06T...",
         "updatedAt": "2026-06-06T..."
@@ -345,14 +361,18 @@ Authorization: Bearer <jwt_token>
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| `PUT` | `/branches/:id` | Yes | Update branch name and address |
+| `PUT` | `/branches/:id` | Yes | Update branch details |
 
 **Request body:**
 
 ```json
 {
-  "name": "Klass360 Mumbai Campus",
-  "address": "456 Learning Road, Bandra West, Mumbai, 400050"
+  "name": "Mumbai Campus",
+  "code": "MUM-01",
+  "address": "456 Learning Road, Bandra West",
+  "city": "Mumbai",
+  "state": "Maharashtra",
+  "status": "inactive"
 }
 ```
 
@@ -365,8 +385,12 @@ Authorization: Bearer <jwt_token>
   "data": {
     "branch": {
       "id": "...",
-      "name": "Klass360 Mumbai Campus",
-      "address": "456 Learning Road, Bandra West, Mumbai, 400050",
+      "name": "Mumbai Campus",
+      "code": "MUM-01",
+      "address": "456 Learning Road, Bandra West",
+      "city": "Mumbai",
+      "state": "Maharashtra",
+      "status": "inactive",
       "createdBy": "...",
       "createdAt": "2026-06-06T...",
       "updatedAt": "2026-06-06T..."
@@ -398,6 +422,112 @@ Authorization: Bearer <jwt_token>
 
 ---
 
+### Course Management
+
+> **Auth required:** All course endpoints require a valid admin JWT token.
+
+#### Create Course
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/courses` | Yes | Create a new course |
+
+**Request body:**
+
+```json
+{
+  "name": "B.Tech Computer Science",
+  "category": "Engineering",
+  "durationInMonths": 48,
+  "description": "Undergraduate program in computer science",
+  "branchIds": ["branchId1", "branchId2"],
+  "isActive": true
+}
+```
+
+**Validation rules:**
+- `name` — required, max 150 characters, must be unique (case-insensitive)
+- `category` — required, max 100 characters
+- `durationInMonths` — required, integer between 1 and 120
+- `description` — optional, max 2000 characters
+- `branchIds` — required array, at least one valid branch MongoDB ID
+- `isActive` — optional boolean (defaults to `true`)
+
+**Success response (201):**
+
+```json
+{
+  "success": true,
+  "message": "Course created successfully",
+  "data": {
+    "course": {
+      "id": "...",
+      "name": "B.Tech Computer Science",
+      "category": "Engineering",
+      "durationInMonths": 48,
+      "description": "Undergraduate program in computer science",
+      "branchIds": ["..."],
+      "branches": [{ "id": "...", "name": "Delhi Campus", "code": "DEL-01" }],
+      "isActive": true,
+      "createdAt": "2026-06-06T...",
+      "updatedAt": "2026-06-06T..."
+    }
+  }
+}
+```
+
+---
+
+#### Get All Courses
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/courses` | Yes | List all courses with populated branch references |
+
+---
+
+#### Get Course by ID
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/courses/:id` | Yes | Get a single course by MongoDB ID |
+
+---
+
+#### Update Course
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `PUT` | `/courses/:id` | Yes | Update course details |
+
+**Request body:** Same fields as create.
+
+---
+
+#### Activate Course
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `PATCH` | `/courses/:id/activate` | Yes | Set `isActive` to `true` |
+
+---
+
+#### Deactivate Course
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `PATCH` | `/courses/:id/deactivate` | Yes | Set `isActive` to `false` |
+
+---
+
+#### Delete Course
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `DELETE` | `/courses/:id` | Yes | Permanently delete a course |
+
+---
+
 ## Project Structure
 
 ```
@@ -406,18 +536,21 @@ backend/
 │   ├── config/
 │   │   └── db.js              # MongoDB connection
 │   ├── controllers/
-│   │   ├── authController.js   # Auth business logic
-│   │   └── branchController.js # Branch CRUD logic
+│   │   ├── authController.js    # Auth business logic
+│   │   ├── branchController.js  # Branch CRUD logic
+│   │   └── courseController.js  # Course CRUD logic
 │   ├── middleware/
 │   │   ├── auth.js            # JWT authentication guard
 │   │   ├── errorHandler.js    # Global error handler
 │   │   └── validate.js        # Request validation middleware
 │   ├── models/
 │   │   ├── Admin.js           # Admin Mongoose schema
-│   │   └── Branch.js          # Branch Mongoose schema
+│   │   ├── Branch.js          # Branch Mongoose schema
+│   │   └── Course.js          # Course Mongoose schema
 │   ├── routes/
 │   │   ├── authRoutes.js      # /api/auth/* routes
 │   │   ├── branchRoutes.js    # /api/branches/* routes
+│   │   ├── courseRoutes.js    # /api/courses/* routes
 │   │   └── index.js           # Route aggregator
 │   ├── utils/
 │   │   ├── AppError.js        # Custom error class
@@ -425,7 +558,8 @@ backend/
 │   │   └── jwt.js             # Token sign/verify helpers
 │   ├── validators/
 │   │   ├── authValidator.js   # Auth validation rules
-│   │   └── branchValidator.js # Branch validation rules
+│   │   ├── branchValidator.js # Branch validation rules
+│   │   └── courseValidator.js # Course validation rules
 │   ├── app.js                 # Express app setup
 │   └── server.js              # Entry point
 ├── .env.example
@@ -457,5 +591,5 @@ backend/
 | `401` | Invalid credentials or expired/missing token |
 | `403` | Account deactivated or insufficient permissions |
 | `404` | Route not found |
-| `409` | Email or branch name already exists |
+| `409` | Email, branch name, branch code, or course name already exists |
 | `500` | Internal server error |

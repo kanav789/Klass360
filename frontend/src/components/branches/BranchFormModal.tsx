@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import type { Branch } from '@/types/branch'
+import type { Branch, BranchPayload, BranchStatus } from '@/types/branch'
 
 interface BranchFormModalProps {
   open: boolean
@@ -13,7 +13,7 @@ interface BranchFormModalProps {
   isSubmitting: boolean
   error: string
   onClose: () => void
-  onSubmit: (data: { name: string; address: string }) => void
+  onSubmit: (data: BranchPayload) => void
 }
 
 export function BranchFormModal({
@@ -26,12 +26,20 @@ export function BranchFormModal({
   onSubmit,
 }: BranchFormModalProps) {
   const [name, setName] = useState('')
+  const [code, setCode] = useState('')
   const [address, setAddress] = useState('')
+  const [city, setCity] = useState('')
+  const [state, setState] = useState('')
+  const [status, setStatus] = useState<BranchStatus>('active')
 
   useEffect(() => {
     if (open) {
       setName(branch?.name ?? '')
+      setCode(branch?.code ?? '')
       setAddress(branch?.address ?? '')
+      setCity(branch?.city ?? '')
+      setState(branch?.state ?? '')
+      setStatus(branch?.status ?? 'active')
     }
   }, [open, branch])
 
@@ -39,7 +47,14 @@ export function BranchFormModal({
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    onSubmit({ name, address })
+    onSubmit({
+      name,
+      code: code.toUpperCase(),
+      address,
+      city,
+      state,
+      status,
+    })
   }
 
   return (
@@ -51,7 +66,7 @@ export function BranchFormModal({
         aria-label="Close modal"
       />
 
-      <div className="relative w-full max-w-lg rounded-[var(--radius-card)] border border-border/60 bg-card p-6 shadow-[var(--shadow-card-hover)]">
+      <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[var(--radius-card)] border border-border/60 bg-card p-6 shadow-[var(--shadow-card-hover)]">
         <div className="mb-6 flex items-start justify-between">
           <div>
             <h2 className="text-xl font-bold text-primary">
@@ -59,8 +74,8 @@ export function BranchFormModal({
             </h2>
             <p className="mt-1 text-sm text-secondary">
               {mode === 'create'
-                ? 'Add a new institute branch with name and address.'
-                : 'Update the branch entity name and address.'}
+                ? 'Add a new institute branch with location details.'
+                : 'Update branch information and status.'}
             </p>
           </div>
           <button
@@ -80,20 +95,40 @@ export function BranchFormModal({
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="branch-name">Entity Name</Label>
-            <Input
-              id="branch-name"
-              placeholder="e.g. Klass360 Delhi Campus"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              disabled={isSubmitting}
-            />
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="branch-name">
+                Branch Name <span className="text-danger">*</span>
+              </Label>
+              <Input
+                id="branch-name"
+                placeholder="e.g. Delhi Campus"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="branch-code">
+                Branch Code <span className="text-danger">*</span>
+              </Label>
+              <Input
+                id="branch-code"
+                placeholder="e.g. DEL-01"
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                required
+                disabled={isSubmitting}
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="branch-address">Address</Label>
+            <Label htmlFor="branch-address">
+              Address <span className="text-danger">*</span>
+            </Label>
             <Textarea
               id="branch-address"
               placeholder="Enter full branch address"
@@ -102,6 +137,50 @@ export function BranchFormModal({
               required
               disabled={isSubmitting}
             />
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="branch-city">
+                City <span className="text-danger">*</span>
+              </Label>
+              <Input
+                id="branch-city"
+                placeholder="e.g. New Delhi"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                required
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="branch-state">
+                State <span className="text-danger">*</span>
+              </Label>
+              <Input
+                id="branch-state"
+                placeholder="e.g. Delhi"
+                value={state}
+                onChange={(e) => setState(e.target.value)}
+                required
+                disabled={isSubmitting}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="branch-status">Status</Label>
+            <select
+              id="branch-status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as BranchStatus)}
+              disabled={isSubmitting}
+              className="flex h-12 w-full rounded-[var(--radius-input)] border border-border bg-input px-4 text-sm text-primary transition-all duration-200 focus:border-lime focus:bg-card focus:outline-none focus:ring-2 focus:ring-lime/20 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
           </div>
 
           <div className="flex justify-end gap-3 pt-2">

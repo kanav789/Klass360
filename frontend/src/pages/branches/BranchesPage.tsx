@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   Building2,
   Loader2,
-  MapPin,
   Pencil,
   Plus,
   Search,
@@ -13,9 +12,25 @@ import { DeleteBranchModal } from '@/components/branches/DeleteBranchModal'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { cn } from '@/lib/utils'
 import { ApiError } from '@/lib/api'
 import { branchService } from '@/services/branchService'
-import type { Branch } from '@/types/branch'
+import type { Branch, BranchPayload } from '@/types/branch'
+
+function StatusBadge({ status }: { status: Branch['status'] }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize',
+        status === 'active'
+          ? 'bg-success/10 text-success'
+          : 'bg-secondary/10 text-secondary',
+      )}
+    >
+      {status}
+    </span>
+  )
+}
 
 export function BranchesPage() {
   const [branches, setBranches] = useState<Branch[]>([])
@@ -58,7 +73,11 @@ export function BranchesPage() {
     const query = search.toLowerCase()
     return (
       branch.name.toLowerCase().includes(query) ||
-      branch.address.toLowerCase().includes(query)
+      branch.code.toLowerCase().includes(query) ||
+      branch.address.toLowerCase().includes(query) ||
+      branch.city.toLowerCase().includes(query) ||
+      branch.state.toLowerCase().includes(query) ||
+      branch.status.toLowerCase().includes(query)
     )
   })
 
@@ -76,7 +95,7 @@ export function BranchesPage() {
     setFormOpen(true)
   }
 
-  const handleFormSubmit = async (data: { name: string; address: string }) => {
+  const handleFormSubmit = async (data: BranchPayload) => {
     setIsSubmitting(true)
     setFormError('')
 
@@ -121,13 +140,6 @@ export function BranchesPage() {
     }
   }
 
-  const formatDate = (date: string) =>
-    new Date(date).toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    })
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -140,7 +152,7 @@ export function BranchesPage() {
             Branches
           </h1>
           <p className="mt-2 text-secondary">
-            Create and manage institute branches with entity names and addresses.
+            Manage institute branches with codes, locations, and status.
           </p>
         </div>
 
@@ -205,12 +217,15 @@ export function BranchesPage() {
           ) : (
             <div className="overflow-hidden rounded-[var(--radius-card)] border border-border/60">
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[720px] text-left text-sm">
+                <table className="w-full min-w-[960px] text-left text-sm">
                   <thead className="sticky top-0 bg-background text-secondary">
                     <tr className="border-b border-border/60">
-                      <th className="px-5 py-4 font-semibold">Entity Name</th>
+                      <th className="px-5 py-4 font-semibold">Branch Name</th>
+                      <th className="px-5 py-4 font-semibold">Branch Code</th>
                       <th className="px-5 py-4 font-semibold">Address</th>
-                      <th className="px-5 py-4 font-semibold">Created</th>
+                      <th className="px-5 py-4 font-semibold">City</th>
+                      <th className="px-5 py-4 font-semibold">State</th>
+                      <th className="px-5 py-4 font-semibold">Status</th>
                       <th className="px-5 py-4 text-right font-semibold">
                         Actions
                       </th>
@@ -224,8 +239,8 @@ export function BranchesPage() {
                       >
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-lime/15">
-                              <Building2 className="h-5 w-5 text-primary" />
+                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-lime/15">
+                              <Building2 className="h-4 w-4 text-primary" />
                             </div>
                             <span className="font-semibold text-primary">
                               {branch.name}
@@ -233,15 +248,19 @@ export function BranchesPage() {
                           </div>
                         </td>
                         <td className="px-5 py-4">
-                          <div className="flex items-start gap-2 text-secondary">
-                            <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
-                            <span className="max-w-md leading-relaxed">
-                              {branch.address}
-                            </span>
-                          </div>
+                          <span className="rounded-lg bg-background px-2.5 py-1 font-mono text-xs font-semibold text-primary">
+                            {branch.code}
+                          </span>
                         </td>
-                        <td className="px-5 py-4 text-secondary">
-                          {formatDate(branch.createdAt)}
+                        <td className="max-w-xs px-5 py-4 text-secondary">
+                          <span className="line-clamp-2 leading-relaxed">
+                            {branch.address}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 text-primary">{branch.city}</td>
+                        <td className="px-5 py-4 text-primary">{branch.state}</td>
+                        <td className="px-5 py-4">
+                          <StatusBadge status={branch.status} />
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex items-center justify-end gap-2">
