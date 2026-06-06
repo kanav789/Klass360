@@ -6,6 +6,7 @@ import { LoginPage } from '@/pages/auth/LoginPage'
 import { SignupPage } from '@/pages/auth/SignupPage'
 import { BranchesPage } from '@/pages/branches/BranchesPage'
 import { CoursesPage } from '@/pages/courses/CoursesPage'
+import { SectionsPage } from '@/pages/sections/SectionsPage'
 import { PlaceholderPage } from '@/pages/PlaceholderPage'
 
 function App() {
@@ -58,6 +59,7 @@ function App() {
             />
             <Route path="/branches" element={<BranchesPage />} />
             <Route path="/courses" element={<CoursesPage />} />
+            <Route path="/sections" element={<SectionsPage />} />
             <Route
               path="/fees"
               element={

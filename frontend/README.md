@@ -77,6 +77,18 @@ This section documents **what frontend feature connects to which backend API**.
 | `src/components/courses/DeleteCourseModal.tsx` | `DELETE /api/courses/:id` | Permanently deletes a course after confirmation |
 | `src/pages/courses/CoursesPage.tsx` | `GET /api/branches` | Loads active branches for course assignment in the form |
 
+### Section Management
+
+| Frontend Location | Backend API | What It Does |
+|-------------------|-------------|--------------|
+| `src/pages/sections/SectionsPage.tsx` | `GET /api/sections` | Loads all sections into the table on page mount |
+| `src/components/sections/SectionFormModal.tsx` (create) | `POST /api/sections` | Creates a section with name, course, branch, dates, and status |
+| `src/components/sections/SectionFormModal.tsx` (edit) | `PUT /api/sections/:id` | Updates an existing section |
+| `src/pages/sections/SectionsPage.tsx` (activate) | `PATCH /api/sections/:id/activate` | Activates a section |
+| `src/pages/sections/SectionsPage.tsx` (deactivate) | `PATCH /api/sections/:id/deactivate` | Deactivates a section |
+| `src/components/sections/DeleteSectionModal.tsx` | `DELETE /api/sections/:id` | Permanently deletes a section after confirmation |
+| `src/pages/sections/SectionsPage.tsx` | `GET /api/courses`, `GET /api/branches` | Loads active courses and branches for section form dropdowns |
+
 ### API Layer
 
 | File | Role |
@@ -85,6 +97,7 @@ This section documents **what frontend feature connects to which backend API**.
 | `src/services/authService.ts` | Auth-specific API calls (register, login, getMe, logout) |
 | `src/services/branchService.ts` | Branch CRUD API calls (getAll, getById, create, update, delete) |
 | `src/services/courseService.ts` | Course CRUD + activate/deactivate API calls |
+| `src/services/sectionService.ts` | Section CRUD + activate/deactivate API calls |
 | `src/types/auth.ts` | TypeScript interfaces for admin and API responses |
 | `src/types/branch.ts` | TypeScript interfaces for branch and API responses |
 | `src/types/course.ts` | TypeScript interfaces for course and API responses |
@@ -160,6 +173,9 @@ frontend/src/
 │   ├── courses/
 │   │   ├── CourseFormModal.tsx    # Create/edit course modal
 │   │   └── DeleteCourseModal.tsx  # Delete confirmation modal
+│   ├── sections/
+│   │   ├── SectionFormModal.tsx   # Create/edit section modal
+│   │   └── DeleteSectionModal.tsx # Delete confirmation modal
 │   ├── brand/
 │   │   └── Logo.tsx
 │   ├── layout/
@@ -179,15 +195,19 @@ frontend/src/
 │   │   └── BranchesPage.tsx       # Branch list + CRUD UI
 │   ├── courses/
 │   │   └── CoursesPage.tsx        # Course list + CRUD UI
+│   ├── sections/
+│   │   └── SectionsPage.tsx       # Section list + CRUD UI
 │   └── PlaceholderPage.tsx        # Placeholder for future pages
 ├── services/
 │   ├── authService.ts             # Auth API service
 │   ├── branchService.ts           # Branch API service
-│   └── courseService.ts           # Course API service
+│   ├── courseService.ts           # Course API service
+│   └── sectionService.ts          # Section API service
 ├── types/
 │   ├── auth.ts                    # Auth TypeScript types
 │   ├── branch.ts                  # Branch TypeScript types
-│   └── course.ts                  # Course TypeScript types
+│   ├── course.ts                  # Course TypeScript types
+│   └── section.ts                 # Section TypeScript types
 ├── App.tsx                        # Route definitions
 └── main.tsx                       # App entry with AuthProvider
 ```
@@ -206,6 +226,7 @@ frontend/src/
 | `/students` | Protected | Placeholder |
 | `/branches` | Protected | Branch management (CRUD) |
 | `/courses` | Protected | Course management (CRUD + activate/deactivate) |
+| `/sections` | Protected | Section management (CRUD + activate/deactivate) |
 | `/fees` | Protected | Placeholder |
 | `/reports` | Protected | Placeholder |
 | `/calendar` | Protected | Placeholder |

@@ -528,6 +528,115 @@ Authorization: Bearer <jwt_token>
 
 ---
 
+### Section Management (Branch Sections)
+
+> **Auth required:** All section endpoints require a valid admin JWT token.
+
+Sections link a **course** to a **branch** with a schedule. The selected branch must be assigned to the selected course.
+
+#### Create Section
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/sections` | Yes | Create a new section |
+
+**Request body:**
+
+```json
+{
+  "name": "Morning Batch 2026",
+  "courseId": "courseMongoId",
+  "branchId": "branchMongoId",
+  "startDate": "2026-07-01",
+  "endDate": "2027-06-30",
+  "isActive": true
+}
+```
+
+**Validation rules:**
+- `name` — required, max 150 characters, unique per course + branch combination
+- `courseId` — required, valid course MongoDB ID
+- `branchId` — required, valid branch MongoDB ID, must be linked to the course
+- `startDate` — required, valid ISO date
+- `endDate` — required, valid ISO date, must be after `startDate`
+- `isActive` — optional boolean (defaults to `true`)
+
+**Success response (201):**
+
+```json
+{
+  "success": true,
+  "message": "Section created successfully",
+  "data": {
+    "section": {
+      "id": "...",
+      "name": "Morning Batch 2026",
+      "courseId": "...",
+      "branchId": "...",
+      "course": { "id": "...", "name": "B.Tech CSE", "category": "Engineering" },
+      "branch": { "id": "...", "name": "Delhi Campus", "code": "DEL-01" },
+      "startDate": "2026-07-01T00:00:00.000Z",
+      "endDate": "2027-06-30T00:00:00.000Z",
+      "isActive": true,
+      "createdAt": "2026-06-06T...",
+      "updatedAt": "2026-06-06T..."
+    }
+  }
+}
+```
+
+---
+
+#### Get All Sections
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/sections` | Yes | List all sections with populated course and branch |
+
+---
+
+#### Get Section by ID
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/sections/:id` | Yes | Get a single section by MongoDB ID |
+
+---
+
+#### Update Section
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `PUT` | `/sections/:id` | Yes | Update section details |
+
+**Request body:** Same fields as create.
+
+---
+
+#### Activate Section
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `PATCH` | `/sections/:id/activate` | Yes | Set `isActive` to `true` |
+
+---
+
+#### Deactivate Section
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `PATCH` | `/sections/:id/deactivate` | Yes | Set `isActive` to `false` |
+
+---
+
+#### Delete Section
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `DELETE` | `/sections/:id` | Yes | Permanently delete a section |
+
+---
+
 ## Project Structure
 
 ```
@@ -538,7 +647,8 @@ backend/
 │   ├── controllers/
 │   │   ├── authController.js    # Auth business logic
 │   │   ├── branchController.js  # Branch CRUD logic
-│   │   └── courseController.js  # Course CRUD logic
+│   │   ├── courseController.js  # Course CRUD logic
+│   │   └── sectionController.js # Section CRUD logic
 │   ├── middleware/
 │   │   ├── auth.js            # JWT authentication guard
 │   │   ├── errorHandler.js    # Global error handler
@@ -546,11 +656,13 @@ backend/
 │   ├── models/
 │   │   ├── Admin.js           # Admin Mongoose schema
 │   │   ├── Branch.js          # Branch Mongoose schema
-│   │   └── Course.js          # Course Mongoose schema
+│   │   ├── Course.js          # Course Mongoose schema
+│   │   └── Section.js         # Section Mongoose schema
 │   ├── routes/
 │   │   ├── authRoutes.js      # /api/auth/* routes
 │   │   ├── branchRoutes.js    # /api/branches/* routes
 │   │   ├── courseRoutes.js    # /api/courses/* routes
+│   │   ├── sectionRoutes.js   # /api/sections/* routes
 │   │   └── index.js           # Route aggregator
 │   ├── utils/
 │   │   ├── AppError.js        # Custom error class
@@ -559,7 +671,8 @@ backend/
 │   ├── validators/
 │   │   ├── authValidator.js   # Auth validation rules
 │   │   ├── branchValidator.js # Branch validation rules
-│   │   └── courseValidator.js # Course validation rules
+│   │   ├── courseValidator.js # Course validation rules
+│   │   └── sectionValidator.js # Section validation rules
 │   ├── app.js                 # Express app setup
 │   └── server.js              # Entry point
 ├── .env.example
@@ -591,5 +704,5 @@ backend/
 | `401` | Invalid credentials or expired/missing token |
 | `403` | Account deactivated or insufficient permissions |
 | `404` | Route not found |
-| `409` | Email, branch name, branch code, or course name already exists |
+| `409` | Email, branch name, branch code, course name, or section name already exists for that course/branch |
 | `500` | Internal server error |
