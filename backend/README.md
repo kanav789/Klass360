@@ -637,6 +637,165 @@ Sections link a **course** to a **branch** with a schedule. The selected branch 
 
 ---
 
+### User Management
+
+> **Auth required:** All user endpoints require a valid admin JWT token.
+
+> **Note:** This manages institute staff users (CRM users). Portal login accounts are handled separately via the Admin auth module.
+
+#### Create User
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/users` | Yes | Create a new institute user |
+
+**Request body:**
+
+```json
+{
+  "firstName": "Rahul",
+  "lastName": "Sharma",
+  "mobile": "9876543210",
+  "email": "rahul@klass360.edu",
+  "role": "counselor"
+}
+```
+
+**Validation rules:**
+- `firstName` — required, max 50 characters
+- `lastName` — required, max 50 characters
+- `mobile` — required, unique, valid 10-digit Indian mobile number
+- `email` — required, unique, valid email format
+- `role` — required, one of: `admin`, `manager`, `counselor`, `teacher`, `accountant`, `receptionist`
+
+**Success response (201):**
+
+```json
+{
+  "success": true,
+  "message": "User created successfully",
+  "data": {
+    "user": {
+      "id": "...",
+      "firstName": "Rahul",
+      "lastName": "Sharma",
+      "mobile": "9876543210",
+      "email": "rahul@klass360.edu",
+      "role": "counselor",
+      "createdAt": "2026-06-06T...",
+      "updatedAt": "2026-06-06T..."
+    }
+  }
+}
+```
+
+---
+
+#### Get All Users
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/users` | Yes | List all institute users (newest first) |
+
+---
+
+#### Get User by ID
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/users/:id` | Yes | Get a single user by MongoDB ID |
+
+---
+
+#### Update User
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `PUT` | `/users/:id` | Yes | Update user details |
+
+**Request body:** Same fields as create.
+
+---
+
+#### Delete User
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `DELETE` | `/users/:id` | Yes | Permanently delete a user |
+
+---
+
+### Lead Management
+
+> **Auth required:** All lead endpoints require a valid admin JWT token.
+
+#### Create Lead
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/leads` | Yes | Create a new lead |
+
+**Request body:**
+
+```json
+{
+  "name": "Rahul Sharma",
+  "number": "9876543210",
+  "whatsappNumber": "9876543210",
+  "alternateNumber": "",
+  "branchId": "branchMongoId",
+  "courseId": "courseMongoId",
+  "source": "website",
+  "assignedTo": "userMongoId"
+}
+```
+
+**Validation rules:**
+- `name` — required, max 100 characters
+- `number` — required, unique, valid 10-digit phone (cannot be updated later)
+- `whatsappNumber` — required, valid 10-digit number
+- `alternateNumber` — optional, valid 10-digit number
+- `branchId` — required, valid branch ID
+- `courseId` — required, valid course ID linked to the branch
+- `source` — required, one of: `referral`, `website`, `walkin`, `offline_campaign`
+- `assignedTo` — required, valid user ID
+
+---
+
+#### Get All Leads
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/leads` | Yes | List all leads with populated branch, course, and assigned user |
+
+---
+
+#### Get Lead by ID
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/leads/:id` | Yes | Get a single lead by MongoDB ID |
+
+---
+
+#### Update Lead
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `PUT` | `/leads/:id` | Yes | Update lead details (phone number cannot be changed) |
+
+**Request body:** Same as create, except `number` must not be included.
+
+---
+
+#### Delete Lead
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `DELETE` | `/leads/:id` | Yes | Permanently delete a lead |
+
+---
+
 ## Project Structure
 
 ```
@@ -648,7 +807,9 @@ backend/
 │   │   ├── authController.js    # Auth business logic
 │   │   ├── branchController.js  # Branch CRUD logic
 │   │   ├── courseController.js  # Course CRUD logic
-│   │   └── sectionController.js # Section CRUD logic
+│   │   ├── sectionController.js # Section CRUD logic
+│   │   ├── userController.js    # User CRUD logic
+│   │   └── leadController.js    # Lead CRUD logic
 │   ├── middleware/
 │   │   ├── auth.js            # JWT authentication guard
 │   │   ├── errorHandler.js    # Global error handler
@@ -657,12 +818,16 @@ backend/
 │   │   ├── Admin.js           # Admin Mongoose schema
 │   │   ├── Branch.js          # Branch Mongoose schema
 │   │   ├── Course.js          # Course Mongoose schema
-│   │   └── Section.js         # Section Mongoose schema
+│   │   ├── Section.js         # Section Mongoose schema
+│   │   ├── User.js            # User Mongoose schema
+│   │   └── Lead.js            # Lead Mongoose schema
 │   ├── routes/
 │   │   ├── authRoutes.js      # /api/auth/* routes
 │   │   ├── branchRoutes.js    # /api/branches/* routes
 │   │   ├── courseRoutes.js    # /api/courses/* routes
 │   │   ├── sectionRoutes.js   # /api/sections/* routes
+│   │   ├── userRoutes.js      # /api/users/* routes
+│   │   ├── leadRoutes.js      # /api/leads/* routes
 │   │   └── index.js           # Route aggregator
 │   ├── utils/
 │   │   ├── AppError.js        # Custom error class
@@ -672,7 +837,9 @@ backend/
 │   │   ├── authValidator.js   # Auth validation rules
 │   │   ├── branchValidator.js # Branch validation rules
 │   │   ├── courseValidator.js # Course validation rules
-│   │   └── sectionValidator.js # Section validation rules
+│   │   ├── sectionValidator.js # Section validation rules
+│   │   ├── userValidator.js    # User validation rules
+│   │   └── leadValidator.js    # Lead validation rules
 │   ├── app.js                 # Express app setup
 │   └── server.js              # Entry point
 ├── .env.example
@@ -704,5 +871,5 @@ backend/
 | `401` | Invalid credentials or expired/missing token |
 | `403` | Account deactivated or insufficient permissions |
 | `404` | Route not found |
-| `409` | Email, branch name, branch code, course name, or section name already exists for that course/branch |
+| `409` | Email, mobile, phone number, branch name, branch code, course name, or section name already exists |
 | `500` | Internal server error |

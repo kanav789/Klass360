@@ -89,6 +89,26 @@ This section documents **what frontend feature connects to which backend API**.
 | `src/components/sections/DeleteSectionModal.tsx` | `DELETE /api/sections/:id` | Permanently deletes a section after confirmation |
 | `src/pages/sections/SectionsPage.tsx` | `GET /api/courses`, `GET /api/branches` | Loads active courses and branches for section form dropdowns |
 
+### User Management
+
+| Frontend Location | Backend API | What It Does |
+|-------------------|-------------|--------------|
+| `src/pages/users/UsersPage.tsx` | `GET /api/users` | Loads all institute users into the table on page mount |
+| `src/components/users/UserFormModal.tsx` (create) | `POST /api/users` | Creates a user with first name, last name, mobile, email, and role |
+| `src/components/users/UserFormModal.tsx` (edit) | `PUT /api/users/:id` | Updates an existing user |
+| `src/components/users/DeleteUserModal.tsx` | `DELETE /api/users/:id` | Permanently deletes a user after confirmation |
+| `src/services/userService.ts` | `GET /api/users/:id` | Available for fetching a single user (used by service layer) |
+
+### Lead Management
+
+| Frontend Location | Backend API | What It Does |
+|-------------------|-------------|--------------|
+| `src/pages/leads/LeadsPage.tsx` | `GET /api/leads` | Loads all leads into the table on page mount |
+| `src/components/leads/LeadFormModal.tsx` (create) | `POST /api/leads` | Creates a lead with name, phone, WhatsApp, branch, course, source, and assigned user |
+| `src/components/leads/LeadFormModal.tsx` (edit) | `PUT /api/leads/:id` | Updates lead (phone number is locked and not sent) |
+| `src/components/leads/DeleteLeadModal.tsx` | `DELETE /api/leads/:id` | Permanently deletes a lead after confirmation |
+| `src/pages/leads/LeadsPage.tsx` | `GET /api/branches`, `GET /api/courses`, `GET /api/users` | Loads dropdown options for branch, course, and assigned user |
+
 ### API Layer
 
 | File | Role |
@@ -98,9 +118,14 @@ This section documents **what frontend feature connects to which backend API**.
 | `src/services/branchService.ts` | Branch CRUD API calls (getAll, getById, create, update, delete) |
 | `src/services/courseService.ts` | Course CRUD + activate/deactivate API calls |
 | `src/services/sectionService.ts` | Section CRUD + activate/deactivate API calls |
+| `src/services/userService.ts` | User CRUD API calls |
+| `src/services/leadService.ts` | Lead CRUD API calls |
 | `src/types/auth.ts` | TypeScript interfaces for admin and API responses |
 | `src/types/branch.ts` | TypeScript interfaces for branch and API responses |
 | `src/types/course.ts` | TypeScript interfaces for course and API responses |
+| `src/types/section.ts` | TypeScript interfaces for section and API responses |
+| `src/types/user.ts` | TypeScript interfaces for user and API responses |
+| `src/types/lead.ts` | TypeScript interfaces for lead and API responses |
 
 ### Route Protection
 
@@ -176,6 +201,12 @@ frontend/src/
 │   ├── sections/
 │   │   ├── SectionFormModal.tsx   # Create/edit section modal
 │   │   └── DeleteSectionModal.tsx # Delete confirmation modal
+│   ├── users/
+│   │   ├── UserFormModal.tsx      # Create/edit user modal
+│   │   └── DeleteUserModal.tsx    # Delete confirmation modal
+│   ├── leads/
+│   │   ├── LeadFormModal.tsx      # Create/edit lead modal
+│   │   └── DeleteLeadModal.tsx    # Delete confirmation modal
 │   ├── brand/
 │   │   └── Logo.tsx
 │   ├── layout/
@@ -197,17 +228,25 @@ frontend/src/
 │   │   └── CoursesPage.tsx        # Course list + CRUD UI
 │   ├── sections/
 │   │   └── SectionsPage.tsx       # Section list + CRUD UI
+│   ├── users/
+│   │   └── UsersPage.tsx          # User list + CRUD UI
+│   ├── leads/
+│   │   └── LeadsPage.tsx          # Lead list + CRUD UI
 │   └── PlaceholderPage.tsx        # Placeholder for future pages
 ├── services/
 │   ├── authService.ts             # Auth API service
 │   ├── branchService.ts           # Branch API service
 │   ├── courseService.ts           # Course API service
-│   └── sectionService.ts          # Section API service
+│   ├── sectionService.ts          # Section API service
+│   ├── userService.ts             # User API service
+│   └── leadService.ts             # Lead API service
 ├── types/
 │   ├── auth.ts                    # Auth TypeScript types
 │   ├── branch.ts                  # Branch TypeScript types
 │   ├── course.ts                  # Course TypeScript types
-│   └── section.ts                 # Section TypeScript types
+│   ├── section.ts                 # Section TypeScript types
+│   ├── user.ts                    # User TypeScript types
+│   └── lead.ts                    # Lead TypeScript types
 ├── App.tsx                        # Route definitions
 └── main.tsx                       # App entry with AuthProvider
 ```
@@ -222,11 +261,12 @@ frontend/src/
 | `/signup` | Guest only | Admin registration |
 | `/enquiries` | Protected | Default dashboard page |
 | `/dashboard` | Protected | Placeholder |
-| `/leads` | Protected | Placeholder |
+| `/leads` | Protected | Lead management (CRUD) |
 | `/students` | Protected | Placeholder |
 | `/branches` | Protected | Branch management (CRUD) |
 | `/courses` | Protected | Course management (CRUD + activate/deactivate) |
 | `/sections` | Protected | Section management (CRUD + activate/deactivate) |
+| `/users` | Protected | User management (CRUD) |
 | `/fees` | Protected | Placeholder |
 | `/reports` | Protected | Placeholder |
 | `/calendar` | Protected | Placeholder |

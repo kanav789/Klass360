@@ -1,0 +1,30 @@
+import { apiRequest } from '@/lib/api'
+import type {
+  LeadCreatePayload,
+  LeadResponse,
+  LeadsResponse,
+  LeadUpdatePayload,
+} from '@/types/lead'
+
+export const leadService = {
+  getAll: () => apiRequest<LeadsResponse>('/leads'),
+
+  getById: (id: string) => apiRequest<LeadResponse>(`/leads/${id}`),
+
+  create: (payload: LeadCreatePayload) =>
+    apiRequest<LeadResponse>('/leads', {
+      method: 'POST',
+      body: payload,
+    }),
+
+  update: (id: string, payload: LeadUpdatePayload) =>
+    apiRequest<LeadResponse>(`/leads/${id}`, {
+      method: 'PUT',
+      body: payload,
+    }),
+
+  delete: (id: string) =>
+    apiRequest<{ success: boolean; message: string }>(`/leads/${id}`, {
+      method: 'DELETE',
+    }),
+}

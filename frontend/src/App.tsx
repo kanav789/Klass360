@@ -7,6 +7,8 @@ import { SignupPage } from '@/pages/auth/SignupPage'
 import { BranchesPage } from '@/pages/branches/BranchesPage'
 import { CoursesPage } from '@/pages/courses/CoursesPage'
 import { SectionsPage } from '@/pages/sections/SectionsPage'
+import { LeadsPage } from '@/pages/leads/LeadsPage'
+import { UsersPage } from '@/pages/users/UsersPage'
 import { PlaceholderPage } from '@/pages/PlaceholderPage'
 
 function App() {
@@ -30,15 +32,7 @@ function App() {
                 />
               }
             />
-            <Route
-              path="/leads"
-              element={
-                <PlaceholderPage
-                  title="Leads"
-                  description="Manage and track prospective student leads."
-                />
-              }
-            />
+            <Route path="/leads" element={<LeadsPage />} />
             <Route
               path="/enquiries"
               element={
@@ -60,6 +54,7 @@ function App() {
             <Route path="/branches" element={<BranchesPage />} />
             <Route path="/courses" element={<CoursesPage />} />
             <Route path="/sections" element={<SectionsPage />} />
+            <Route path="/users" element={<UsersPage />} />
             <Route
               path="/fees"
               element={
