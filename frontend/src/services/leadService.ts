@@ -1,4 +1,6 @@
 import { apiRequest } from '@/lib/api'
+import { withQueryParams } from '@/lib/query'
+import type { ListQueryParams } from '@/types/user'
 import type {
   LeadCreatePayload,
   LeadResponse,
@@ -7,7 +9,8 @@ import type {
 } from '@/types/lead'
 
 export const leadService = {
-  getAll: () => apiRequest<LeadsResponse>('/leads'),
+  getAll: (params?: ListQueryParams) =>
+    apiRequest<LeadsResponse>(withQueryParams('/leads', params)),
 
   getById: (id: string) => apiRequest<LeadResponse>(`/leads/${id}`),
 

@@ -19,6 +19,7 @@ interface AdmissionFormModalProps {
   courses: Course[]
   sections: Section[]
   existingEnquiryIds: string[]
+  lockedBranchId?: string
   isLoadingOptions: boolean
   isSubmitting: boolean
   error: string
@@ -42,6 +43,7 @@ export function AdmissionFormModal({
   courses,
   sections,
   existingEnquiryIds,
+  lockedBranchId,
   isLoadingOptions,
   isSubmitting,
   error,
@@ -104,7 +106,7 @@ export function AdmissionFormModal({
     if (open) {
       setEnquiryId(admission?.enquiryId ?? '')
       setLeadId(admission?.leadId ?? '')
-      setBranchId(admission?.branchId ?? '')
+      setBranchId(admission?.branchId ?? lockedBranchId ?? '')
       setCourseId(admission?.courseId ?? '')
       setBatchId(admission?.batchId ?? '')
       setAdmissionDate(
@@ -118,7 +120,7 @@ export function AdmissionFormModal({
       setEmail(admission?.student?.email ?? '')
       setQualification(admission?.student?.qualification ?? '')
     }
-  }, [open, admission])
+  }, [open, admission, lockedBranchId])
 
   useEffect(() => {
     if (mode === 'create' && selectedEnquiry) {
@@ -232,7 +234,12 @@ export function AdmissionFormModal({
                 value={branchId}
                 onChange={(e) => setBranchId(e.target.value)}
                 required
-                disabled={isLoadingOptions || isSubmitting || mode === 'create'}
+                disabled={
+                  isLoadingOptions ||
+                  isSubmitting ||
+                  (mode === 'create' && !!selectedEnquiry) ||
+                  !!lockedBranchId
+                }
                 className="flex h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-primary outline-none transition-colors focus:border-lime focus:ring-2 focus:ring-lime/20 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <option value="">Select branch</option>

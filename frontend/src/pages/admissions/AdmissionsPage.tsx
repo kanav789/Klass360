@@ -12,15 +12,15 @@ import { DeleteAdmissionModal } from '@/components/admissions/DeleteAdmissionMod
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { useBranchFilter } from '@/context/BranchFilterContext'
+import { useBranchQuery } from '@/hooks/useBranchQuery'
 import { cn } from '@/lib/utils'
 import { ApiError } from '@/lib/api'
 import { admissionService } from '@/services/admissionService'
-import { branchService } from '@/services/branchService'
 import { courseService } from '@/services/courseService'
 import { enquiryService } from '@/services/enquiryService'
 import { sectionService } from '@/services/sectionService'
 import type { Admission, AdmissionPayload, AdmissionStatus } from '@/types/admission'
-import type { Branch } from '@/types/branch'
 import type { Course } from '@/types/course'
 import type { Enquiry } from '@/types/enquiry'
 import type { Section } from '@/types/section'
@@ -65,9 +65,10 @@ function formatCurrency(amount: number) {
 }
 
 export function AdmissionsPage() {
+  const branchQuery = useBranchQuery()
+  const { selectedBranchId, branches: filterBranches } = useBranchFilter()
   const [admissions, setAdmissions] = useState<Admission[]>([])
   const [enquiries, setEnquiries] = useState<Enquiry[]>([])
-  const [branches, setBranches] = useState<Branch[]>([])
   const [courses, setCourses] = useState<Course[]>([])
   const [sections, setSections] = useState<Section[]>([])
   const [search, setSearch] = useState('')
@@ -99,7 +100,7 @@ export function AdmissionsPage() {
     setError('')
 
     try {
-      const response = await admissionService.getAll()
+      const response = await admissionService.getAll(branchQuery)
       setAdmissions(response.data.admissions)
     } catch (err) {
       setError(
@@ -110,39 +111,32 @@ export function AdmissionsPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [branchQuery])
 
   const fetchOptions = useCallback(async () => {
     setIsLoadingOptions(true)
 
     try {
-      const [enquiriesResponse, branchesResponse, coursesResponse, sectionsResponse] =
+      const [enquiriesResponse, coursesResponse, sectionsResponse] =
         await Promise.all([
-          enquiryService.getAll(),
-          branchService.getAll(),
-          courseService.getAll(),
-          sectionService.getAll(),
+          enquiryService.getAll(branchQuery),
+          courseService.getAll(branchQuery),
+          sectionService.getAll(branchQuery),
         ])
 
       setEnquiries(enquiriesResponse.data.enquiries)
-      setBranches(
-        branchesResponse.data.branches.filter(
-          (branch) => branch.status === 'active',
-        ),
-      )
       setCourses(
         coursesResponse.data.courses.filter((course) => course.isActive),
       )
       setSections(sectionsResponse.data.sections)
     } catch {
       setEnquiries([])
-      setBranches([])
       setCourses([])
       setSections([])
     } finally {
       setIsLoadingOptions(false)
     }
-  }, [])
+  }, [branchQuery])
 
   useEffect(() => {
     fetchAdmissions()
@@ -395,10 +389,11 @@ export function AdmissionsPage() {
         mode={formMode}
         admission={selectedAdmission}
         enquiries={enquiries}
-        branches={branches}
+        branches={filterBranches}
         courses={courses}
         sections={sections}
         existingEnquiryIds={existingEnquiryIds}
+        lockedBranchId={selectedBranchId || undefined}
         isLoadingOptions={isLoadingOptions}
         isSubmitting={isSubmitting}
         error={formError}

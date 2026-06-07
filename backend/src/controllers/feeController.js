@@ -1,4 +1,5 @@
 const Admission = require('../models/Admission');
+const { getBranchIdFromQuery } = require('../utils/queryFilters');
 const Fee = require('../models/Fee');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
@@ -118,8 +119,16 @@ const createFee = asyncHandler(async (req, res) => {
   });
 });
 
-const getFees = asyncHandler(async (_req, res) => {
-  const fees = await Fee.find()
+const getFees = asyncHandler(async (req, res) => {
+  const branchId = getBranchIdFromQuery(req.query);
+  const filter = {};
+
+  if (branchId) {
+    const admissions = await Admission.find({ branchId }).select('_id');
+    filter.admissionId = { $in: admissions.map((admission) => admission._id) };
+  }
+
+  const fees = await Fee.find(filter)
     .populate({
       path: 'admissionId',
       select: 'admissionDate totalFee discount netFee status',

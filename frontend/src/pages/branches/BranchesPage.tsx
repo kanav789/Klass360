@@ -12,6 +12,8 @@ import { DeleteBranchModal } from '@/components/branches/DeleteBranchModal'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { useBranchFilter } from '@/context/BranchFilterContext'
+import { useInstitute } from '@/context/InstituteContext'
 import { cn } from '@/lib/utils'
 import { ApiError } from '@/lib/api'
 import { branchService } from '@/services/branchService'
@@ -33,6 +35,8 @@ function StatusBadge({ status }: { status: Branch['status'] }) {
 }
 
 export function BranchesPage() {
+  const { institute } = useInstitute()
+  const { refreshBranches } = useBranchFilter()
   const [branches, setBranches] = useState<Branch[]>([])
   const [search, setSearch] = useState('')
   const [isLoading, setIsLoading] = useState(true)
@@ -52,7 +56,9 @@ export function BranchesPage() {
     setError('')
 
     try {
-      const response = await branchService.getAll()
+      const response = await branchService.getAll({
+        instituteId: institute?.id,
+      })
       setBranches(response.data.branches)
     } catch (err) {
       setError(
@@ -63,7 +69,7 @@ export function BranchesPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [institute?.id])
 
   useEffect(() => {
     fetchBranches()
@@ -101,13 +107,17 @@ export function BranchesPage() {
 
     try {
       if (formMode === 'create') {
-        await branchService.create(data)
+        await branchService.create({
+          ...data,
+          instituteId: institute?.id,
+        })
       } else if (selectedBranch) {
         await branchService.update(selectedBranch.id, data)
       }
 
       setFormOpen(false)
       await fetchBranches()
+      await refreshBranches()
     } catch (err) {
       setFormError(
         err instanceof ApiError
@@ -128,6 +138,7 @@ export function BranchesPage() {
       await branchService.delete(deleteTarget.id)
       setDeleteTarget(null)
       await fetchBranches()
+      await refreshBranches()
     } catch (err) {
       setError(
         err instanceof ApiError

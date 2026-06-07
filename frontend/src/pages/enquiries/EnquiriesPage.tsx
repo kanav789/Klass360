@@ -12,14 +12,14 @@ import { EnquiryFormModal } from '@/components/enquiries/EnquiryFormModal'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { useBranchFilter } from '@/context/BranchFilterContext'
+import { useBranchQuery } from '@/hooks/useBranchQuery'
 import { cn } from '@/lib/utils'
 import { ApiError } from '@/lib/api'
-import { branchService } from '@/services/branchService'
 import { courseService } from '@/services/courseService'
 import { enquiryService } from '@/services/enquiryService'
 import { leadService } from '@/services/leadService'
 import { userService } from '@/services/userService'
-import type { Branch } from '@/types/branch'
 import type { Course } from '@/types/course'
 import type { Enquiry, EnquiryPayload, EnquiryStatus } from '@/types/enquiry'
 import type { Lead } from '@/types/lead'
@@ -57,9 +57,10 @@ function formatDisplayDate(date: string) {
 }
 
 export function EnquiriesPage() {
+  const branchQuery = useBranchQuery()
+  const { selectedBranchId, branches: filterBranches } = useBranchFilter()
   const [enquiries, setEnquiries] = useState<Enquiry[]>([])
   const [leads, setLeads] = useState<Lead[]>([])
-  const [branches, setBranches] = useState<Branch[]>([])
   const [courses, setCourses] = useState<Course[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [search, setSearch] = useState('')
@@ -81,7 +82,7 @@ export function EnquiriesPage() {
     setError('')
 
     try {
-      const response = await enquiryService.getAll()
+      const response = await enquiryService.getAll(branchQuery)
       setEnquiries(response.data.enquiries)
     } catch (err) {
       setError(
@@ -92,39 +93,32 @@ export function EnquiriesPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [branchQuery])
 
   const fetchOptions = useCallback(async () => {
     setIsLoadingOptions(true)
 
     try {
-      const [leadsResponse, branchesResponse, coursesResponse, usersResponse] =
+      const [leadsResponse, coursesResponse, usersResponse] =
         await Promise.all([
-          leadService.getAll(),
-          branchService.getAll(),
-          courseService.getAll(),
-          userService.getAll(),
+          leadService.getAll(branchQuery),
+          courseService.getAll(branchQuery),
+          userService.getAll(branchQuery),
         ])
 
       setLeads(leadsResponse.data.leads)
-      setBranches(
-        branchesResponse.data.branches.filter(
-          (branch) => branch.status === 'active',
-        ),
-      )
       setCourses(
         coursesResponse.data.courses.filter((course) => course.isActive),
       )
       setUsers(usersResponse.data.users)
     } catch {
       setLeads([])
-      setBranches([])
       setCourses([])
       setUsers([])
     } finally {
       setIsLoadingOptions(false)
     }
-  }, [])
+  }, [branchQuery])
 
   useEffect(() => {
     fetchEnquiries()
@@ -370,9 +364,10 @@ export function EnquiriesPage() {
         mode={formMode}
         enquiry={selectedEnquiry}
         leads={leads}
-        branches={branches}
+        branches={filterBranches}
         courses={courses}
         users={users}
+        lockedBranchId={selectedBranchId || undefined}
         isLoadingOptions={isLoadingOptions}
         isSubmitting={isSubmitting}
         error={formError}

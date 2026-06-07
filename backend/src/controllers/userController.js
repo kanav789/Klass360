@@ -1,6 +1,8 @@
+const Branch = require('../models/Branch');
 const User = require('../models/User');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
+const { getBranchIdFromQuery } = require('../utils/queryFilters');
 
 const formatUser = (user) => ({
   id: user._id,
@@ -9,9 +11,20 @@ const formatUser = (user) => ({
   mobile: user.mobile,
   email: user.email,
   role: user.role,
+  branchId: user.branchId?._id || user.branchId,
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
 });
+
+const validateBranch = async (branchId) => {
+  const branch = await Branch.findById(branchId);
+
+  if (!branch) {
+    throw new AppError('Selected branch does not exist', 400);
+  }
+
+  return branch;
+};
 
 const findDuplicateUser = async ({ email, mobile, excludeId }) => {
   const filters = [];
@@ -38,7 +51,9 @@ const findDuplicateUser = async ({ email, mobile, excludeId }) => {
 };
 
 const createUser = asyncHandler(async (req, res) => {
-  const { firstName, lastName, mobile, email, role } = req.body;
+  const { firstName, lastName, mobile, email, role, branchId } = req.body;
+
+  await validateBranch(branchId);
 
   const existingUser = await findDuplicateUser({ email, mobile });
 
@@ -56,6 +71,7 @@ const createUser = asyncHandler(async (req, res) => {
     mobile,
     email,
     role,
+    branchId,
   });
 
   res.status(201).json({
@@ -65,8 +81,11 @@ const createUser = asyncHandler(async (req, res) => {
   });
 });
 
-const getUsers = asyncHandler(async (_req, res) => {
-  const users = await User.find().sort({ createdAt: -1 });
+const getUsers = asyncHandler(async (req, res) => {
+  const branchId = getBranchIdFromQuery(req.query);
+  const filter = branchId ? { branchId } : {};
+
+  const users = await User.find(filter).sort({ createdAt: -1 });
 
   res.status(200).json({
     success: true,
@@ -91,7 +110,7 @@ const getUserById = asyncHandler(async (req, res) => {
 });
 
 const updateUser = asyncHandler(async (req, res) => {
-  const { firstName, lastName, mobile, email, role } = req.body;
+  const { firstName, lastName, mobile, email, role, branchId } = req.body;
 
   const user = await User.findById(req.params.id);
 
@@ -118,11 +137,16 @@ const updateUser = asyncHandler(async (req, res) => {
     }
   }
 
+  if (branchId) {
+    await validateBranch(branchId);
+  }
+
   user.firstName = firstName ?? user.firstName;
   user.lastName = lastName ?? user.lastName;
   user.mobile = mobile ?? user.mobile;
   user.email = email ?? user.email;
   user.role = role ?? user.role;
+  user.branchId = branchId ?? user.branchId;
   await user.save();
 
   res.status(200).json({

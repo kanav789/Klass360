@@ -1,8 +1,11 @@
 import { apiRequest } from '@/lib/api'
+import { withQueryParams } from '@/lib/query'
+import type { ListQueryParams } from '@/types/user'
 import type { FeePayload, FeeResponse, FeesResponse } from '@/types/fee'
 
 export const feeService = {
-  getAll: () => apiRequest<FeesResponse>('/fees'),
+  getAll: (params?: ListQueryParams) =>
+    apiRequest<FeesResponse>(withQueryParams('/fees', params)),
 
   getById: (id: string) => apiRequest<FeeResponse>(`/fees/${id}`),
 

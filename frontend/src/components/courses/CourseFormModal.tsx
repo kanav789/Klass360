@@ -14,6 +14,7 @@ interface CourseFormModalProps {
   course?: Course | null
   branches: Branch[]
   isLoadingBranches: boolean
+  lockedBranchId?: string
   isSubmitting: boolean
   error: string
   onClose: () => void
@@ -26,6 +27,7 @@ export function CourseFormModal({
   course,
   branches,
   isLoadingBranches,
+  lockedBranchId,
   isSubmitting,
   error,
   onClose,
@@ -44,10 +46,13 @@ export function CourseFormModal({
       setCategory(course?.category ?? '')
       setDurationInMonths(String(course?.durationInMonths ?? 12))
       setDescription(course?.description ?? '')
-      setSelectedBranchIds(course?.branchIds ?? [])
+      setSelectedBranchIds(
+        course?.branchIds ??
+          (mode === 'create' && lockedBranchId ? [lockedBranchId] : []),
+      )
       setIsActive(course?.isActive ?? true)
     }
-  }, [open, course])
+  }, [open, course, mode, lockedBranchId])
 
   if (!open) return null
 
@@ -211,7 +216,7 @@ export function CourseFormModal({
                       onCheckedChange={(checked) =>
                         toggleBranch(branch.id, checked === true)
                       }
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || !!lockedBranchId}
                     />
                     <span className="text-sm">
                       <span className="font-medium text-primary">

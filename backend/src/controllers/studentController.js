@@ -1,6 +1,7 @@
 const Student = require('../models/Student');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
+const { getBranchIdFromQuery } = require('../utils/queryFilters');
 
 const formatBranchRef = (branch) => ({
   id: branch._id,
@@ -43,8 +44,11 @@ const getPopulatedStudent = (id) =>
     .populate('branchId', 'name code')
     .populate('leadId', 'name number');
 
-const getStudents = asyncHandler(async (_req, res) => {
-  const students = await Student.find()
+const getStudents = asyncHandler(async (req, res) => {
+  const branchId = getBranchIdFromQuery(req.query);
+  const filter = branchId ? { branchId } : {};
+
+  const students = await Student.find(filter)
     .populate('branchId', 'name code')
     .populate('leadId', 'name number')
     .sort({ createdAt: -1 });

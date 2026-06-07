@@ -1,11 +1,17 @@
 const Branch = require('../models/Branch');
+const Institute = require('../models/Institute');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
+const {
+  getBranchIdFromQuery,
+  getInstituteIdFromQuery,
+} = require('../utils/queryFilters');
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const formatBranch = (branch) => ({
   id: branch._id,
+  instituteId: branch.instituteId?._id || branch.instituteId,
   name: branch.name,
   code: branch.code,
   address: branch.address,
@@ -17,7 +23,32 @@ const formatBranch = (branch) => ({
   updatedAt: branch.updatedAt,
 });
 
-const findDuplicateBranch = async ({ name, code, excludeId }) => {
+const resolveInstituteId = async (instituteId) => {
+  if (instituteId) {
+    const institute = await Institute.findById(instituteId);
+
+    if (!institute) {
+      throw new AppError('Selected institute does not exist', 400);
+    }
+
+    return institute._id;
+  }
+
+  const institute =
+    (await Institute.findOne({ isActive: true }).sort({ updatedAt: -1 })) ||
+    (await Institute.findOne().sort({ createdAt: -1 }));
+
+  if (!institute) {
+    throw new AppError(
+      'Create an institute in Settings before adding branches',
+      400,
+    );
+  }
+
+  return institute._id;
+};
+
+const findDuplicateBranch = async ({ instituteId, name, code, excludeId }) => {
   const filters = [];
 
   if (name) {
@@ -36,7 +67,10 @@ const findDuplicateBranch = async ({ name, code, excludeId }) => {
     return null;
   }
 
-  const query = { $or: filters };
+  const query = {
+    instituteId,
+    $or: filters,
+  };
 
   if (excludeId) {
     query._id = { $ne: excludeId };
@@ -46,19 +80,27 @@ const findDuplicateBranch = async ({ name, code, excludeId }) => {
 };
 
 const createBranch = asyncHandler(async (req, res) => {
-  const { name, code, address, city, state, status = 'active' } = req.body;
+  const { name, code, address, city, state, status = 'active', instituteId } =
+    req.body;
 
-  const existingBranch = await findDuplicateBranch({ name, code });
+  const resolvedInstituteId = await resolveInstituteId(instituteId);
+
+  const existingBranch = await findDuplicateBranch({
+    instituteId: resolvedInstituteId,
+    name,
+    code,
+  });
 
   if (existingBranch) {
     if (existingBranch.name.toLowerCase() === name.toLowerCase()) {
-      throw new AppError('A branch with this name already exists', 409);
+      throw new AppError('A branch with this name already exists for the institute', 409);
     }
 
-    throw new AppError('A branch with this code already exists', 409);
+    throw new AppError('A branch with this code already exists for the institute', 409);
   }
 
   const branch = await Branch.create({
+    instituteId: resolvedInstituteId,
     name,
     code: code.toUpperCase(),
     address,
@@ -75,8 +117,21 @@ const createBranch = asyncHandler(async (req, res) => {
   });
 });
 
-const getBranches = asyncHandler(async (_req, res) => {
-  const branches = await Branch.find().sort({ createdAt: -1 });
+const getBranches = asyncHandler(async (req, res) => {
+  const instituteId = getInstituteIdFromQuery(req.query);
+  const branchId = getBranchIdFromQuery(req.query);
+
+  const filter = {};
+
+  if (instituteId) {
+    filter.instituteId = instituteId;
+  }
+
+  if (branchId) {
+    filter._id = branchId;
+  }
+
+  const branches = await Branch.find(filter).sort({ createdAt: -1 });
 
   res.status(200).json({
     success: true,
@@ -115,6 +170,7 @@ const updateBranch = asyncHandler(async (req, res) => {
 
   if (nameChanged || codeChanged) {
     const existingBranch = await findDuplicateBranch({
+      instituteId: branch.instituteId,
       name: nameChanged ? name : undefined,
       code: codeChanged ? code : undefined,
       excludeId: branch._id,
@@ -122,10 +178,10 @@ const updateBranch = asyncHandler(async (req, res) => {
 
     if (existingBranch) {
       if (nameChanged && existingBranch.name.toLowerCase() === name.toLowerCase()) {
-        throw new AppError('A branch with this name already exists', 409);
+        throw new AppError('A branch with this name already exists for the institute', 409);
       }
 
-      throw new AppError('A branch with this code already exists', 409);
+      throw new AppError('A branch with this code already exists for the institute', 409);
     }
   }
 

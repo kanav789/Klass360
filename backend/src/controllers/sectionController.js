@@ -3,6 +3,7 @@ const Course = require('../models/Course');
 const Section = require('../models/Section');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
+const { getBranchIdFromQuery } = require('../utils/queryFilters');
 
 const formatCourseRef = (course) => ({
   id: course._id,
@@ -112,8 +113,11 @@ const createSection = asyncHandler(async (req, res) => {
   });
 });
 
-const getSections = asyncHandler(async (_req, res) => {
-  const sections = await Section.find()
+const getSections = asyncHandler(async (req, res) => {
+  const branchId = getBranchIdFromQuery(req.query);
+  const filter = branchId ? { branchId } : {};
+
+  const sections = await Section.find(filter)
     .populate('courseId', 'name category')
     .populate('branchId', 'name code')
     .sort({ createdAt: -1 });

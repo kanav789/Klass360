@@ -3,6 +3,7 @@ import { Loader2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import type { Branch } from '@/types/branch'
 import type { User, UserPayload, UserRole } from '@/types/user'
 import { USER_ROLES } from '@/types/user'
 
@@ -10,6 +11,8 @@ interface UserFormModalProps {
   open: boolean
   mode: 'create' | 'edit'
   user?: User | null
+  branches: Branch[]
+  lockedBranchId?: string
   isSubmitting: boolean
   error: string
   onClose: () => void
@@ -29,6 +32,8 @@ export function UserFormModal({
   open,
   mode,
   user,
+  branches,
+  lockedBranchId,
   isSubmitting,
   error,
   onClose,
@@ -39,6 +44,7 @@ export function UserFormModal({
   const [mobile, setMobile] = useState('')
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<UserRole>('counselor')
+  const [branchId, setBranchId] = useState('')
 
   useEffect(() => {
     if (open) {
@@ -47,14 +53,15 @@ export function UserFormModal({
       setMobile(user?.mobile ?? '')
       setEmail(user?.email ?? '')
       setRole(user?.role ?? 'counselor')
+      setBranchId(user?.branchId ?? lockedBranchId ?? '')
     }
-  }, [open, user])
+  }, [open, user, lockedBranchId])
 
   if (!open) return null
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    onSubmit({ firstName, lastName, mobile, email, role })
+    onSubmit({ firstName, lastName, mobile, email, role, branchId })
   }
 
   const selectClassName =
@@ -156,6 +163,27 @@ export function UserFormModal({
               required
               disabled={isSubmitting}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="user-branch">
+              Branch <span className="text-danger">*</span>
+            </Label>
+            <select
+              id="user-branch"
+              value={branchId}
+              onChange={(e) => setBranchId(e.target.value)}
+              required
+              disabled={isSubmitting || !!lockedBranchId || branches.length === 0}
+              className={selectClassName}
+            >
+              <option value="">Select branch</option>
+              {branches.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name} ({branch.code})
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="space-y-2">

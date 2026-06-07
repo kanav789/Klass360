@@ -1,4 +1,6 @@
 import { apiRequest } from '@/lib/api'
+import { withQueryParams } from '@/lib/query'
+import type { ListQueryParams } from '@/types/user'
 import type {
   SectionPayload,
   SectionResponse,
@@ -6,7 +8,8 @@ import type {
 } from '@/types/section'
 
 export const sectionService = {
-  getAll: () => apiRequest<SectionsResponse>('/sections'),
+  getAll: (params?: ListQueryParams) =>
+    apiRequest<SectionsResponse>(withQueryParams('/sections', params)),
 
   getById: (id: string) => apiRequest<SectionResponse>(`/sections/${id}`),
 

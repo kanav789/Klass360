@@ -54,6 +54,50 @@ Server runs at `http://localhost:5000`.
 
 ---
 
+## Organization Structure
+
+Klass360 is organized around a single **Institute** with multiple **Branches**. Most operational data is scoped to a branch.
+
+```
+Institute
+   └── Branch
+         ├── Courses (via branchIds[])
+         ├── Batches / Sections
+         ├── Users (staff)
+         ├── Leads
+         ├── Enquiries
+         ├── Admissions → Students
+         └── Fees (via admissions)
+```
+
+| Entity | Parent | Notes |
+|--------|--------|-------|
+| **Institute** | — | Profile + logo; managed in Settings |
+| **Branch** | Institute | `instituteId` required; name/code unique per institute |
+| **Course** | Branch(es) | `branchIds[]` — a course can span multiple branches |
+| **User** | Branch | `branchId` required — counselors/staff are branch-scoped |
+| **Lead → Enquiry → Admission → Student → Fee** | Branch | Workflow unchanged; each record carries `branchId` |
+
+### Branch filtering
+
+List endpoints accept an optional `?branchId=<mongoId>` query parameter. When provided, results are limited to that branch. Omit it to return all branches.
+
+| Endpoint | Filter field |
+|----------|--------------|
+| `GET /branches` | `instituteId`, `branchId` |
+| `GET /courses` | `branchIds` contains `branchId` |
+| `GET /sections`, `GET /batches` | `branchId` |
+| `GET /users` | `branchId` |
+| `GET /leads` | `branchId` |
+| `GET /enquiries` | `branchId` |
+| `GET /admissions` | `branchId` |
+| `GET /students` | `branchId` |
+| `GET /fees` | via linked admission's `branchId` |
+
+> **Migration note:** Branches created before `instituteId` was added must be re-created or manually updated with a valid institute reference.
+
+---
+
 ## API Reference
 
 Base URL: `http://localhost:5000/api`
@@ -240,16 +284,19 @@ Authorization: Bearer <jwt_token>
 
 > **Auth required:** All branch endpoints require a valid admin JWT token.
 
+Branches belong to an institute. Name and code are unique **per institute**, not globally.
+
 #### Create Branch
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| `POST` | `/branches` | Yes | Create a new institute branch |
+| `POST` | `/branches` | Yes | Create a new branch under an institute |
 
 **Request body:**
 
 ```json
 {
+  "instituteId": "instituteMongoId",
   "name": "Delhi Campus",
   "code": "DEL-01",
   "address": "123 Education Lane, Connaught Place",
@@ -260,8 +307,9 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Validation rules:**
-- `name` — required, max 150 characters, must be unique (case-insensitive)
-- `code` — required, max 20 characters, letters/numbers/hyphens only, must be unique (stored uppercase)
+- `instituteId` — optional on create; resolves to the active institute if omitted
+- `name` — required, max 150 characters, unique per institute (case-insensitive)
+- `code` — required, max 20 characters, letters/numbers/hyphens only, unique per institute (stored uppercase)
 - `address` — required, max 500 characters
 - `city` — required, max 100 characters
 - `state` — required, max 100 characters
@@ -276,6 +324,7 @@ Authorization: Bearer <jwt_token>
   "data": {
     "branch": {
       "id": "...",
+      "instituteId": "...",
       "name": "Delhi Campus",
       "code": "DEL-01",
       "address": "123 Education Lane, Connaught Place",
@@ -298,7 +347,7 @@ Authorization: Bearer <jwt_token>
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| `GET` | `/branches` | Yes | List all branches (newest first) |
+| `GET` | `/branches` | Yes | List branches; filter with `?instituteId=` and/or `?branchId=` |
 
 **Success response (200):**
 
@@ -482,7 +531,7 @@ Authorization: Bearer <jwt_token>
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| `GET` | `/courses` | Yes | List all courses with populated branch references |
+| `GET` | `/courses` | Yes | List courses; filter with `?branchId=` (matches `branchIds`) |
 
 ---
 
@@ -593,7 +642,7 @@ Batches (sections) link a **course** to a **branch** with a schedule. The select
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| `GET` | `/sections` | Yes | List all sections with populated course and branch |
+| `GET` | `/sections` | Yes | List sections; filter with `?branchId=` |
 
 ---
 
@@ -659,7 +708,8 @@ Batches (sections) link a **course** to a **branch** with a schedule. The select
   "lastName": "Sharma",
   "mobile": "9876543210",
   "email": "rahul@klass360.edu",
-  "role": "counselor"
+  "role": "counselor",
+  "branchId": "branchMongoId"
 }
 ```
 
@@ -669,6 +719,7 @@ Batches (sections) link a **course** to a **branch** with a schedule. The select
 - `mobile` — required, unique, valid 10-digit Indian mobile number
 - `email` — required, unique, valid email format
 - `role` — required, one of: `admin`, `manager`, `counselor`, `teacher`, `accountant`, `receptionist`
+- `branchId` — required, valid branch MongoDB ID
 
 **Success response (201):**
 
@@ -697,7 +748,7 @@ Batches (sections) link a **course** to a **branch** with a schedule. The select
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| `GET` | `/users` | Yes | List all institute users (newest first) |
+| `GET` | `/users` | Yes | List users; filter with `?branchId=` |
 
 ---
 
@@ -768,7 +819,7 @@ Batches (sections) link a **course** to a **branch** with a schedule. The select
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| `GET` | `/leads` | Yes | List all leads with populated branch, course, and assigned user |
+| `GET` | `/leads` | Yes | List leads; filter with `?branchId=` |
 
 ---
 
@@ -837,7 +888,7 @@ Batches (sections) link a **course** to a **branch** with a schedule. The select
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| `GET` | `/enquiries` | Yes | List all enquiries with populated lead, branch, course, and assigned user |
+| `GET` | `/enquiries` | Yes | List enquiries; filter with `?branchId=` |
 
 ---
 
@@ -914,7 +965,7 @@ Creating an admission automatically creates a linked student profile from the le
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| `GET` | `/admissions` | Yes | List all admissions with populated refs |
+| `GET` | `/admissions` | Yes | List admissions; filter with `?branchId=` |
 
 ---
 
@@ -954,7 +1005,7 @@ Students are created automatically via admissions. These endpoints are read-only
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| `GET` | `/students` | Yes | List all students with populated branch and lead |
+| `GET` | `/students` | Yes | List students; filter with `?branchId=` |
 
 ---
 
@@ -1000,7 +1051,7 @@ One fee record per admission. `discount` and `netFee` are pulled from the linked
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| `GET` | `/fees` | Yes | List all fee records with populated admission details |
+| `GET` | `/fees` | Yes | List fee records; filter with `?branchId=` (via admission) |
 
 ---
 
@@ -1147,7 +1198,8 @@ backend/
 │   ├── utils/
 │   │   ├── AppError.js        # Custom error class
 │   │   ├── asyncHandler.js    # Async route wrapper
-│   │   └── jwt.js             # Token sign/verify helpers
+│   │   ├── jwt.js             # Token sign/verify helpers
+│   │   └── queryFilters.js    # branchId / instituteId query helpers
 │   ├── validators/
 │   │   ├── authValidator.js   # Auth validation rules
 │   │   ├── branchValidator.js # Branch validation rules

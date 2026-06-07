@@ -2,6 +2,11 @@ const mongoose = require('mongoose');
 
 const branchSchema = new mongoose.Schema(
   {
+    instituteId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Institute',
+      required: [true, 'Institute is required'],
+    },
     name: {
       type: String,
       required: [true, 'Branch name is required'],
@@ -55,8 +60,8 @@ const branchSchema = new mongoose.Schema(
   },
 );
 
-branchSchema.index({ name: 1 }, { unique: true });
-branchSchema.index({ code: 1 }, { unique: true });
+branchSchema.index({ instituteId: 1, name: 1 }, { unique: true });
+branchSchema.index({ instituteId: 1, code: 1 }, { unique: true });
 
 const Branch = mongoose.model('Branch', branchSchema);
 

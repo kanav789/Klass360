@@ -5,6 +5,7 @@ const Lead = require('../models/Lead');
 const User = require('../models/User');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
+const { getBranchIdFromQuery } = require('../utils/queryFilters');
 
 const formatBranchRef = (branch) => ({
   id: branch._id,
@@ -141,8 +142,11 @@ const createEnquiry = asyncHandler(async (req, res) => {
   });
 });
 
-const getEnquiries = asyncHandler(async (_req, res) => {
-  const enquiries = await Enquiry.find()
+const getEnquiries = asyncHandler(async (req, res) => {
+  const branchId = getBranchIdFromQuery(req.query);
+  const filter = branchId ? { branchId } : {};
+
+  const enquiries = await Enquiry.find(filter)
     .populate('leadId', 'name number whatsappNumber')
     .populate('courseId', 'name category')
     .populate('branchId', 'name code')

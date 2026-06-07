@@ -14,12 +14,12 @@ import { SectionFormModal } from '@/components/sections/SectionFormModal'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { useBranchFilter } from '@/context/BranchFilterContext'
+import { useBranchQuery } from '@/hooks/useBranchQuery'
 import { cn } from '@/lib/utils'
 import { ApiError } from '@/lib/api'
-import { branchService } from '@/services/branchService'
 import { courseService } from '@/services/courseService'
 import { sectionService } from '@/services/sectionService'
-import type { Branch } from '@/types/branch'
 import type { Course } from '@/types/course'
 import type { Section, SectionPayload } from '@/types/section'
 
@@ -45,9 +45,10 @@ function formatDisplayDate(date: string) {
 }
 
 export function SectionsPage() {
+  const branchQuery = useBranchQuery()
+  const { selectedBranchId, branches: filterBranches } = useBranchFilter()
   const [sections, setSections] = useState<Section[]>([])
   const [courses, setCourses] = useState<Course[]>([])
-  const [branches, setBranches] = useState<Branch[]>([])
   const [search, setSearch] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingOptions, setIsLoadingOptions] = useState(false)
@@ -68,7 +69,7 @@ export function SectionsPage() {
     setError('')
 
     try {
-      const response = await sectionService.getAll()
+      const response = await sectionService.getAll(branchQuery)
       setSections(response.data.sections)
     } catch (err) {
       setError(
@@ -79,28 +80,21 @@ export function SectionsPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [branchQuery])
 
   const fetchOptions = useCallback(async () => {
     setIsLoadingOptions(true)
 
     try {
-      const [coursesResponse, branchesResponse] = await Promise.all([
-        courseService.getAll(),
-        branchService.getAll(),
-      ])
+      const coursesResponse = await courseService.getAll(branchQuery)
 
       setCourses(coursesResponse.data.courses.filter((course) => course.isActive))
-      setBranches(
-        branchesResponse.data.branches.filter((branch) => branch.status === 'active'),
-      )
     } catch {
       setCourses([])
-      setBranches([])
     } finally {
       setIsLoadingOptions(false)
     }
-  }, [])
+  }, [branchQuery])
 
   useEffect(() => {
     fetchSections()
@@ -382,7 +376,8 @@ export function SectionsPage() {
         mode={formMode}
         section={selectedSection}
         courses={courses}
-        branches={branches}
+        branches={filterBranches}
+        lockedBranchId={selectedBranchId || undefined}
         isLoadingOptions={isLoadingOptions}
         isSubmitting={isSubmitting}
         error={formError}

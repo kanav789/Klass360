@@ -1,12 +1,15 @@
 import { apiRequest } from '@/lib/api'
+import { withQueryParams } from '@/lib/query'
 import type {
   BranchPayload,
+  BranchQueryParams,
   BranchResponse,
   BranchesResponse,
 } from '@/types/branch'
 
 export const branchService = {
-  getAll: () => apiRequest<BranchesResponse>('/branches'),
+  getAll: (params?: BranchQueryParams) =>
+    apiRequest<BranchesResponse>(withQueryParams('/branches', params)),
 
   getById: (id: string) => apiRequest<BranchResponse>(`/branches/${id}`),
 

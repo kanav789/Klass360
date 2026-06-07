@@ -14,11 +14,11 @@ import { DeleteCourseModal } from '@/components/courses/DeleteCourseModal'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { useBranchFilter } from '@/context/BranchFilterContext'
+import { useBranchQuery } from '@/hooks/useBranchQuery'
 import { cn } from '@/lib/utils'
 import { ApiError } from '@/lib/api'
-import { branchService } from '@/services/branchService'
 import { courseService } from '@/services/courseService'
-import type { Branch } from '@/types/branch'
 import type { Course, CoursePayload } from '@/types/course'
 
 function StatusBadge({ isActive }: { isActive: boolean }) {
@@ -35,11 +35,15 @@ function StatusBadge({ isActive }: { isActive: boolean }) {
 }
 
 export function CoursesPage() {
+  const branchQuery = useBranchQuery()
+  const {
+    selectedBranchId,
+    branches: filterBranches,
+    isLoadingBranches,
+  } = useBranchFilter()
   const [courses, setCourses] = useState<Course[]>([])
-  const [branches, setBranches] = useState<Branch[]>([])
   const [search, setSearch] = useState('')
   const [isLoading, setIsLoading] = useState(true)
-  const [isLoadingBranches, setIsLoadingBranches] = useState(false)
   const [error, setError] = useState('')
 
   const [formOpen, setFormOpen] = useState(false)
@@ -57,7 +61,7 @@ export function CoursesPage() {
     setError('')
 
     try {
-      const response = await courseService.getAll()
+      const response = await courseService.getAll(branchQuery)
       setCourses(response.data.courses)
     } catch (err) {
       setError(
@@ -68,25 +72,11 @@ export function CoursesPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [])
-
-  const fetchBranches = useCallback(async () => {
-    setIsLoadingBranches(true)
-
-    try {
-      const response = await branchService.getAll()
-      setBranches(response.data.branches.filter((branch) => branch.status === 'active'))
-    } catch {
-      setBranches([])
-    } finally {
-      setIsLoadingBranches(false)
-    }
-  }, [])
+  }, [branchQuery])
 
   useEffect(() => {
     fetchCourses()
-    fetchBranches()
-  }, [fetchCourses, fetchBranches])
+  }, [fetchCourses])
 
   const filteredCourses = courses.filter((course) => {
     const query = search.toLowerCase()
@@ -371,7 +361,8 @@ export function CoursesPage() {
         open={formOpen}
         mode={formMode}
         course={selectedCourse}
-        branches={branches}
+        branches={filterBranches}
+        lockedBranchId={selectedBranchId || undefined}
         isLoadingBranches={isLoadingBranches}
         isSubmitting={isSubmitting}
         error={formError}

@@ -12,6 +12,7 @@ import { FeeFormModal } from '@/components/fees/FeeFormModal'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { useBranchQuery } from '@/hooks/useBranchQuery'
 import { cn } from '@/lib/utils'
 import { ApiError } from '@/lib/api'
 import { admissionService } from '@/services/admissionService'
@@ -49,6 +50,7 @@ function formatCurrency(amount: number) {
 }
 
 export function FeesPage() {
+  const branchQuery = useBranchQuery()
   const [fees, setFees] = useState<Fee[]>([])
   const [admissions, setAdmissions] = useState<Admission[]>([])
   const [search, setSearch] = useState('')
@@ -78,7 +80,7 @@ export function FeesPage() {
     setError('')
 
     try {
-      const response = await feeService.getAll()
+      const response = await feeService.getAll(branchQuery)
       setFees(response.data.fees)
     } catch (err) {
       setError(
@@ -89,20 +91,20 @@ export function FeesPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [branchQuery])
 
   const fetchAdmissions = useCallback(async () => {
     setIsLoadingOptions(true)
 
     try {
-      const response = await admissionService.getAll()
+      const response = await admissionService.getAll(branchQuery)
       setAdmissions(response.data.admissions)
     } catch {
       setAdmissions([])
     } finally {
       setIsLoadingOptions(false)
     }
-  }, [])
+  }, [branchQuery])
 
   useEffect(() => {
     fetchFees()

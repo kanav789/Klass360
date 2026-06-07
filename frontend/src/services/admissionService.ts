@@ -1,4 +1,6 @@
 import { apiRequest } from '@/lib/api'
+import { withQueryParams } from '@/lib/query'
+import type { ListQueryParams } from '@/types/user'
 import type {
   AdmissionPayload,
   AdmissionResponse,
@@ -6,7 +8,8 @@ import type {
 } from '@/types/admission'
 
 export const admissionService = {
-  getAll: () => apiRequest<AdmissionsResponse>('/admissions'),
+  getAll: (params?: ListQueryParams) =>
+    apiRequest<AdmissionsResponse>(withQueryParams('/admissions', params)),
 
   getById: (id: string) => apiRequest<AdmissionResponse>(`/admissions/${id}`),
 

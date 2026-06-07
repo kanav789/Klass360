@@ -2,6 +2,7 @@ const Branch = require('../models/Branch');
 const Course = require('../models/Course');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
+const { getBranchIdFromQuery } = require('../utils/queryFilters');
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -89,8 +90,11 @@ const createCourse = asyncHandler(async (req, res) => {
   });
 });
 
-const getCourses = asyncHandler(async (_req, res) => {
-  const courses = await Course.find()
+const getCourses = asyncHandler(async (req, res) => {
+  const branchId = getBranchIdFromQuery(req.query);
+  const filter = branchId ? { branchIds: branchId } : {};
+
+  const courses = await Course.find(filter)
     .populate('branchIds', 'name code')
     .sort({ createdAt: -1 });
 

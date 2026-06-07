@@ -7,6 +7,7 @@ const Section = require('../models/Section');
 const Student = require('../models/Student');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
+const { getBranchIdFromQuery } = require('../utils/queryFilters');
 
 const formatBranchRef = (branch) => ({
   id: branch._id,
@@ -275,8 +276,11 @@ const createAdmission = asyncHandler(async (req, res) => {
   }
 });
 
-const getAdmissions = asyncHandler(async (_req, res) => {
-  const admissions = await Admission.find()
+const getAdmissions = asyncHandler(async (req, res) => {
+  const branchId = getBranchIdFromQuery(req.query);
+  const filter = branchId ? { branchId } : {};
+
+  const admissions = await Admission.find(filter)
     .populate('leadId', 'name number whatsappNumber')
     .populate('courseId', 'name category')
     .populate('branchId', 'name code')

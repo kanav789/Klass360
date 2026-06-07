@@ -16,6 +16,7 @@ export interface User {
   mobile: string
   email: string
   role: UserRole
+  branchId: string
   createdAt: string
   updatedAt: string
 }
@@ -42,4 +43,9 @@ export interface UserPayload {
   mobile: string
   email: string
   role: UserRole
+  branchId: string
+}
+
+export interface ListQueryParams {
+  branchId?: string
 }

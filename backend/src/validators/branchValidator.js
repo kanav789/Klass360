@@ -1,6 +1,10 @@
 const { body, param } = require('express-validator');
 
 const branchBodyRules = [
+  body('instituteId')
+    .optional()
+    .isMongoId()
+    .withMessage('Institute ID must be a valid MongoDB ID'),
   body('name')
     .trim()
     .notEmpty()

@@ -1,8 +1,15 @@
 import { apiRequest } from '@/lib/api'
-import type { UserPayload, UserResponse, UsersResponse } from '@/types/user'
+import { withQueryParams } from '@/lib/query'
+import type {
+  ListQueryParams,
+  UserPayload,
+  UserResponse,
+  UsersResponse,
+} from '@/types/user'
 
 export const userService = {
-  getAll: () => apiRequest<UsersResponse>('/users'),
+  getAll: (params?: ListQueryParams) =>
+    apiRequest<UsersResponse>(withQueryParams('/users', params)),
 
   getById: (id: string) => apiRequest<UserResponse>(`/users/${id}`),
 

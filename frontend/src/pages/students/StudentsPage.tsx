@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { GraduationCap, Loader2, Search } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { useBranchQuery } from '@/hooks/useBranchQuery'
 import { cn } from '@/lib/utils'
 import { ApiError } from '@/lib/api'
 import { studentService } from '@/services/studentService'
@@ -21,6 +22,7 @@ function ActiveBadge({ isActive }: { isActive: boolean }) {
 }
 
 export function StudentsPage() {
+  const branchQuery = useBranchQuery()
   const [students, setStudents] = useState<Student[]>([])
   const [search, setSearch] = useState('')
   const [isLoading, setIsLoading] = useState(true)
@@ -31,7 +33,7 @@ export function StudentsPage() {
     setError('')
 
     try {
-      const response = await studentService.getAll()
+      const response = await studentService.getAll(branchQuery)
       setStudents(response.data.students)
     } catch (err) {
       setError(
@@ -42,7 +44,7 @@ export function StudentsPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [branchQuery])
 
   useEffect(() => {
     fetchStudents()

@@ -13,12 +13,12 @@ import { LeadFormModal } from '@/components/leads/LeadFormModal'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { useBranchFilter } from '@/context/BranchFilterContext'
+import { useBranchQuery } from '@/hooks/useBranchQuery'
 import { ApiError } from '@/lib/api'
-import { branchService } from '@/services/branchService'
 import { courseService } from '@/services/courseService'
 import { leadService } from '@/services/leadService'
 import { userService } from '@/services/userService'
-import type { Branch } from '@/types/branch'
 import type { Course } from '@/types/course'
 import type {
   Lead,
@@ -44,8 +44,9 @@ function SourceBadge({ source }: { source: LeadSource }) {
 }
 
 export function LeadsPage() {
+  const branchQuery = useBranchQuery()
+  const { selectedBranchId, branches: filterBranches } = useBranchFilter()
   const [leads, setLeads] = useState<Lead[]>([])
-  const [branches, setBranches] = useState<Branch[]>([])
   const [courses, setCourses] = useState<Course[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [search, setSearch] = useState('')
@@ -67,7 +68,7 @@ export function LeadsPage() {
     setError('')
 
     try {
-      const response = await leadService.getAll()
+      const response = await leadService.getAll(branchQuery)
       setLeads(response.data.leads)
     } catch (err) {
       setError(
@@ -78,36 +79,28 @@ export function LeadsPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [branchQuery])
 
   const fetchOptions = useCallback(async () => {
     setIsLoadingOptions(true)
 
     try {
-      const [branchesResponse, coursesResponse, usersResponse] =
-        await Promise.all([
-          branchService.getAll(),
-          courseService.getAll(),
-          userService.getAll(),
-        ])
+      const [coursesResponse, usersResponse] = await Promise.all([
+        courseService.getAll(branchQuery),
+        userService.getAll(branchQuery),
+      ])
 
-      setBranches(
-        branchesResponse.data.branches.filter(
-          (branch) => branch.status === 'active',
-        ),
-      )
       setCourses(
         coursesResponse.data.courses.filter((course) => course.isActive),
       )
       setUsers(usersResponse.data.users)
     } catch {
-      setBranches([])
       setCourses([])
       setUsers([])
     } finally {
       setIsLoadingOptions(false)
     }
-  }, [])
+  }, [branchQuery])
 
   useEffect(() => {
     fetchLeads()
@@ -352,9 +345,10 @@ export function LeadsPage() {
         open={formOpen}
         mode={formMode}
         lead={selectedLead}
-        branches={branches}
+        branches={filterBranches}
         courses={courses}
         users={users}
+        lockedBranchId={selectedBranchId || undefined}
         isLoadingOptions={isLoadingOptions}
         isSubmitting={isSubmitting}
         error={formError}

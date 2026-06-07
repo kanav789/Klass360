@@ -1,4 +1,6 @@
 import { apiRequest } from '@/lib/api'
+import { withQueryParams } from '@/lib/query'
+import type { ListQueryParams } from '@/types/user'
 import type {
   EnquiryPayload,
   EnquiryResponse,
@@ -6,7 +8,8 @@ import type {
 } from '@/types/enquiry'
 
 export const enquiryService = {
-  getAll: () => apiRequest<EnquiriesResponse>('/enquiries'),
+  getAll: (params?: ListQueryParams) =>
+    apiRequest<EnquiriesResponse>(withQueryParams('/enquiries', params)),
 
   getById: (id: string) => apiRequest<EnquiryResponse>(`/enquiries/${id}`),
 

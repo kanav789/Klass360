@@ -42,6 +42,38 @@ App runs at `http://localhost:5173`.
 
 ---
 
+## Branch Filter
+
+The header branch dropdown replaces the old global search. It controls what data you see and create across the app.
+
+```
+TopHeader branch dropdown
+        │
+        ▼
+BranchFilterContext (sessionStorage: klass360_selected_branch)
+        │
+        ├── useBranchQuery() → { branchId } passed to all list API calls
+        └── lockedBranchId → pre-filled & locked in create forms
+```
+
+| Selection | Behavior |
+|-----------|----------|
+| **All Branches** | Lists show data from every branch; forms let you pick a branch |
+| **Specific branch** | Lists filtered via `?branchId=`; new records auto-lock to that branch |
+
+**Affected pages:** Leads, Enquiries, Admissions, Students, Fees, Users, Courses, Batches, Branches.
+
+**Key files:**
+
+| File | Role |
+|------|------|
+| `src/context/BranchFilterContext.tsx` | Loads institute branches, stores selected branch |
+| `src/hooks/useBranchQuery.ts` | Returns `{ branchId }` for API query params |
+| `src/lib/query.ts` | `withQueryParams()` appends `?branchId=` / `?instituteId=` |
+| `src/components/layout/TopHeader.tsx` | Branch filter dropdown in header |
+
+---
+
 ## Backend Integration Map
 
 This section documents **what frontend feature connects to which backend API**.
@@ -59,8 +91,9 @@ This section documents **what frontend feature connects to which backend API**.
 
 | Frontend Location | Backend API | What It Does |
 |-------------------|-------------|--------------|
-| `src/pages/branches/BranchesPage.tsx` | `GET /api/branches` | Loads all branches into the table on page mount |
-| `src/components/branches/BranchFormModal.tsx` (create) | `POST /api/branches` | Creates a branch with name, code, address, city, state, and status |
+| `src/context/BranchFilterContext.tsx` | `GET /api/branches?instituteId=` | Loads active branches for header filter dropdown |
+| `src/pages/branches/BranchesPage.tsx` | `GET /api/branches?instituteId=` | Lists branches for the active institute |
+| `src/components/branches/BranchFormModal.tsx` (create) | `POST /api/branches` | Creates a branch linked to the active institute (`instituteId`) |
 | `src/components/branches/BranchFormModal.tsx` (edit) | `PUT /api/branches/:id` | Updates branch name, code, address, city, state, and status |
 | `src/components/branches/DeleteBranchModal.tsx` | `DELETE /api/branches/:id` | Permanently deletes a branch after confirmation |
 | `src/services/branchService.ts` | `GET /api/branches/:id` | Available for fetching a single branch (used by service layer) |
@@ -69,7 +102,7 @@ This section documents **what frontend feature connects to which backend API**.
 
 | Frontend Location | Backend API | What It Does |
 |-------------------|-------------|--------------|
-| `src/pages/courses/CoursesPage.tsx` | `GET /api/courses` | Loads all courses into the table on page mount |
+| `src/pages/courses/CoursesPage.tsx` | `GET /api/courses?branchId=` | Loads courses filtered by selected branch |
 | `src/components/courses/CourseFormModal.tsx` (create) | `POST /api/courses` | Creates a course with name, category, duration, description, branches, and status |
 | `src/components/courses/CourseFormModal.tsx` (edit) | `PUT /api/courses/:id` | Updates an existing course |
 | `src/pages/courses/CoursesPage.tsx` (activate) | `PATCH /api/courses/:id/activate` | Activates a course |
@@ -83,7 +116,7 @@ This section documents **what frontend feature connects to which backend API**.
 
 | Frontend Location | Backend API | What It Does |
 |-------------------|-------------|--------------|
-| `src/pages/sections/SectionsPage.tsx` | `GET /api/sections` | Loads all batches into the table on page mount |
+| `src/pages/sections/SectionsPage.tsx` | `GET /api/sections?branchId=` | Loads batches filtered by selected branch |
 | `src/components/sections/SectionFormModal.tsx` (create) | `POST /api/sections` | Creates a section with name, course, branch, dates, and status |
 | `src/components/sections/SectionFormModal.tsx` (edit) | `PUT /api/sections/:id` | Updates an existing section |
 | `src/pages/sections/SectionsPage.tsx` (activate) | `PATCH /api/sections/:id/activate` | Activates a section |
@@ -95,8 +128,8 @@ This section documents **what frontend feature connects to which backend API**.
 
 | Frontend Location | Backend API | What It Does |
 |-------------------|-------------|--------------|
-| `src/pages/users/UsersPage.tsx` | `GET /api/users` | Loads all institute users into the table on page mount |
-| `src/components/users/UserFormModal.tsx` (create) | `POST /api/users` | Creates a user with first name, last name, mobile, email, and role |
+| `src/pages/users/UsersPage.tsx` | `GET /api/users?branchId=` | Loads users filtered by selected branch |
+| `src/components/users/UserFormModal.tsx` (create) | `POST /api/users` | Creates a user with name, contact, role, and required `branchId` |
 | `src/components/users/UserFormModal.tsx` (edit) | `PUT /api/users/:id` | Updates an existing user |
 | `src/components/users/DeleteUserModal.tsx` | `DELETE /api/users/:id` | Permanently deletes a user after confirmation |
 | `src/services/userService.ts` | `GET /api/users/:id` | Available for fetching a single user (used by service layer) |
@@ -105,7 +138,7 @@ This section documents **what frontend feature connects to which backend API**.
 
 | Frontend Location | Backend API | What It Does |
 |-------------------|-------------|--------------|
-| `src/pages/leads/LeadsPage.tsx` | `GET /api/leads` | Loads all leads into the table on page mount |
+| `src/pages/leads/LeadsPage.tsx` | `GET /api/leads?branchId=` | Loads leads filtered by selected branch |
 | `src/components/leads/LeadFormModal.tsx` (create) | `POST /api/leads` | Creates a lead with name, phone, WhatsApp, branch, course, source, and assigned user |
 | `src/components/leads/LeadFormModal.tsx` (edit) | `PUT /api/leads/:id` | Updates lead (phone number is locked and not sent) |
 | `src/components/leads/DeleteLeadModal.tsx` | `DELETE /api/leads/:id` | Permanently deletes a lead after confirmation |
@@ -115,7 +148,7 @@ This section documents **what frontend feature connects to which backend API**.
 
 | Frontend Location | Backend API | What It Does |
 |-------------------|-------------|--------------|
-| `src/pages/enquiries/EnquiriesPage.tsx` | `GET /api/enquiries` | Loads all enquiries into the table on page mount |
+| `src/pages/enquiries/EnquiriesPage.tsx` | `GET /api/enquiries?branchId=` | Loads enquiries filtered by selected branch |
 | `src/components/enquiries/EnquiryFormModal.tsx` (create) | `POST /api/enquiries` | Creates an enquiry linked to a lead with branch, course, assignee, date, status, and notes |
 | `src/components/enquiries/EnquiryFormModal.tsx` (edit) | `PUT /api/enquiries/:id` | Updates an existing enquiry |
 | `src/components/enquiries/DeleteEnquiryModal.tsx` | `DELETE /api/enquiries/:id` | Permanently deletes an enquiry after confirmation |
@@ -125,7 +158,7 @@ This section documents **what frontend feature connects to which backend API**.
 
 | Frontend Location | Backend API | What It Does |
 |-------------------|-------------|--------------|
-| `src/pages/admissions/AdmissionsPage.tsx` | `GET /api/admissions` | Loads all admissions into the table on page mount |
+| `src/pages/admissions/AdmissionsPage.tsx` | `GET /api/admissions?branchId=` | Loads admissions filtered by selected branch |
 | `src/components/admissions/AdmissionFormModal.tsx` (create) | `POST /api/admissions` | Creates admission from enquiry; auto-creates linked student |
 | `src/components/admissions/AdmissionFormModal.tsx` (edit) | `PUT /api/admissions/:id` | Updates admission and syncs student details |
 | `src/components/admissions/DeleteAdmissionModal.tsx` | `DELETE /api/admissions/:id` | Deletes admission and linked student after confirmation |
@@ -135,7 +168,7 @@ This section documents **what frontend feature connects to which backend API**.
 
 | Frontend Location | Backend API | What It Does |
 |-------------------|-------------|--------------|
-| `src/pages/students/StudentsPage.tsx` | `GET /api/students` | Read-only listing of students created from admissions |
+| `src/pages/students/StudentsPage.tsx` | `GET /api/students?branchId=` | Read-only student listing filtered by selected branch |
 
 ### Institute Settings
 
@@ -152,17 +185,18 @@ This section documents **what frontend feature connects to which backend API**.
 
 | Frontend Location | Backend API | What It Does |
 |-------------------|-------------|--------------|
-| `src/pages/fees/FeesPage.tsx` | `GET /api/fees` | Loads all fee records into the table on page mount |
+| `src/pages/fees/FeesPage.tsx` | `GET /api/fees?branchId=` | Loads fee records filtered by selected branch |
 | `src/components/fees/FeeFormModal.tsx` (create) | `POST /api/fees` | Creates fee record; discount and net fee auto-filled from admission |
 | `src/components/fees/FeeFormModal.tsx` (edit) | `PUT /api/fees/:id` | Updates paid amount; pending amount and status recalculated |
 | `src/components/fees/DeleteFeeModal.tsx` | `DELETE /api/fees/:id` | Permanently deletes a fee record after confirmation |
-| `src/pages/fees/FeesPage.tsx` | `GET /api/admissions` | Loads admissions for the fee form dropdown |
+| `src/pages/fees/FeesPage.tsx` | `GET /api/admissions?branchId=` | Loads branch-scoped admissions for the fee form dropdown |
 
 ### API Layer
 
 | File | Role |
 |------|------|
 | `src/lib/api.ts` | Base HTTP client — attaches JWT, handles errors, manages token storage |
+| `src/lib/query.ts` | Appends `?branchId=` / `?instituteId=` to API endpoints |
 | `src/services/authService.ts` | Auth-specific API calls (register, login, getMe, logout) |
 | `src/services/branchService.ts` | Branch CRUD API calls (getAll, getById, create, update, delete) |
 | `src/services/courseService.ts` | Course CRUD + activate/deactivate API calls |
@@ -274,12 +308,17 @@ frontend/src/
 │   ├── layout/
 │   │   ├── DashboardLayout.tsx    # Sidebar + header + content shell
 │   │   ├── Sidebar.tsx            # Left navigation
-│   │   └── TopHeader.tsx          # Search, notifications, admin info, logout
+│   │   └── TopHeader.tsx          # Branch filter, notifications, admin info, logout
 │   └── ui/                        # Reusable UI primitives
 ├── context/
-│   └── AuthContext.tsx            # Global auth state and actions
+│   ├── AuthContext.tsx            # Global auth state and actions
+│   ├── InstituteContext.tsx       # Active institute for sidebar branding
+│   └── BranchFilterContext.tsx    # Global branch filter state
+├── hooks/
+│   └── useBranchQuery.ts          # Returns branchId for API query params
 ├── lib/
-│   └── api.ts                     # HTTP client and token helpers
+│   ├── api.ts                     # HTTP client and token helpers
+│   └── query.ts                   # Query string builder for branch/institute filters
 ├── pages/
 │   ├── auth/
 │   │   ├── LoginPage.tsx          # Integrated with POST /auth/login
@@ -314,7 +353,7 @@ frontend/src/
 │   ├── lead.ts                    # Lead TypeScript types
 │   └── enquiry.ts                 # Enquiry TypeScript types
 ├── App.tsx                        # Route definitions
-└── main.tsx                       # App entry with AuthProvider
+└── main.tsx                       # App entry with AuthProvider + BranchFilterProvider
 ```
 
 ---

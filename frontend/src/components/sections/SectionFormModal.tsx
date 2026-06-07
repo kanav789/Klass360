@@ -14,6 +14,7 @@ interface SectionFormModalProps {
   courses: Course[]
   branches: Branch[]
   isLoadingOptions: boolean
+  lockedBranchId?: string
   isSubmitting: boolean
   error: string
   onClose: () => void
@@ -27,6 +28,7 @@ export function SectionFormModal({
   courses,
   branches,
   isLoadingOptions,
+  lockedBranchId,
   isSubmitting,
   error,
   onClose,
@@ -56,12 +58,12 @@ export function SectionFormModal({
     if (open) {
       setName(section?.name ?? '')
       setCourseId(section?.courseId ?? '')
-      setBranchId(section?.branchId ?? '')
+      setBranchId(section?.branchId ?? lockedBranchId ?? '')
       setStartDate(section?.startDate ? section.startDate.slice(0, 10) : '')
       setEndDate(section?.endDate ? section.endDate.slice(0, 10) : '')
       setIsActive(section?.isActive ?? true)
     }
-  }, [open, section])
+  }, [open, section, lockedBranchId])
 
   useEffect(() => {
     if (
@@ -179,7 +181,10 @@ export function SectionFormModal({
                 onChange={(e) => setBranchId(e.target.value)}
                 required
                 disabled={
-                  isSubmitting || !courseId || availableBranches.length === 0
+                  isSubmitting ||
+                  !courseId ||
+                  availableBranches.length === 0 ||
+                  !!lockedBranchId
                 }
                 className={selectClassName}
               >

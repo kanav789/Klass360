@@ -14,6 +14,8 @@ import { UserFormModal } from '@/components/users/UserFormModal'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { useBranchFilter } from '@/context/BranchFilterContext'
+import { useBranchQuery } from '@/hooks/useBranchQuery'
 import { ApiError } from '@/lib/api'
 import { userService } from '@/services/userService'
 import type { User, UserPayload, UserRole } from '@/types/user'
@@ -40,6 +42,8 @@ function getInitials(firstName: string, lastName: string) {
 }
 
 export function UsersPage() {
+  const branchQuery = useBranchQuery()
+  const { selectedBranchId, branches } = useBranchFilter()
   const [users, setUsers] = useState<User[]>([])
   const [search, setSearch] = useState('')
   const [isLoading, setIsLoading] = useState(true)
@@ -59,7 +63,7 @@ export function UsersPage() {
     setError('')
 
     try {
-      const response = await userService.getAll()
+      const response = await userService.getAll(branchQuery)
       setUsers(response.data.users)
     } catch (err) {
       setError(
@@ -70,7 +74,7 @@ export function UsersPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [branchQuery])
 
   useEffect(() => {
     fetchUsers()
@@ -303,6 +307,8 @@ export function UsersPage() {
         open={formOpen}
         mode={formMode}
         user={selectedUser}
+        branches={branches}
+        lockedBranchId={selectedBranchId || undefined}
         isSubmitting={isSubmitting}
         error={formError}
         onClose={() => setFormOpen(false)}

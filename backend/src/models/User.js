@@ -45,6 +45,11 @@ const userSchema = new mongoose.Schema(
         message: `Role must be one of: ${USER_ROLES.join(', ')}`,
       },
     },
+    branchId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Branch',
+      required: [true, 'Branch is required'],
+    },
   },
   {
     timestamps: true,

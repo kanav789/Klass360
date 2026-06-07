@@ -2,6 +2,7 @@ export type BranchStatus = 'active' | 'inactive'
 
 export interface Branch {
   id: string
+  instituteId: string
   name: string
   code: string
   address: string
@@ -29,7 +30,13 @@ export interface BranchResponse {
   }
 }
 
+export interface BranchQueryParams {
+  instituteId?: string
+  branchId?: string
+}
+
 export interface BranchPayload {
+  instituteId?: string
   name: string
   code: string
   address: string

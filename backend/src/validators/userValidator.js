@@ -33,6 +33,11 @@ const userBodyRules = [
     .withMessage('Role is required')
     .isIn(USER_ROLES)
     .withMessage(`Role must be one of: ${USER_ROLES.join(', ')}`),
+  body('branchId')
+    .notEmpty()
+    .withMessage('Branch is required')
+    .isMongoId()
+    .withMessage('Branch ID must be a valid MongoDB ID'),
 ];
 
 const userIdRule = [

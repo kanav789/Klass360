@@ -23,6 +23,7 @@ interface LeadFormModalProps {
   courses: Course[]
   users: User[]
   isLoadingOptions: boolean
+  lockedBranchId?: string
   isSubmitting: boolean
   error: string
   onClose: () => void
@@ -44,6 +45,7 @@ export function LeadFormModal({
   courses,
   users,
   isLoadingOptions,
+  lockedBranchId,
   isSubmitting,
   error,
   onClose,
@@ -76,12 +78,12 @@ export function LeadFormModal({
           : lead?.whatsappNumber === lead?.number,
       )
       setAlternateNumber(lead?.alternateNumber ?? '')
-      setBranchId(lead?.branchId ?? '')
+      setBranchId(lead?.branchId ?? lockedBranchId ?? '')
       setCourseId(lead?.courseId ?? '')
       setSource(lead?.source ?? 'website')
       setAssignedTo(lead?.assignedTo ?? '')
     }
-  }, [open, lead, mode])
+  }, [open, lead, mode, lockedBranchId])
 
   useEffect(() => {
     if (sameAsPhone && mode === 'create') {
@@ -260,7 +262,9 @@ export function LeadFormModal({
                   value={branchId}
                   onChange={(e) => setBranchId(e.target.value)}
                   required
-                  disabled={isSubmitting || branches.length === 0}
+                  disabled={
+                    isSubmitting || branches.length === 0 || !!lockedBranchId
+                  }
                   className={selectClassName}
                 >
                   <option value="">Select branch</option>

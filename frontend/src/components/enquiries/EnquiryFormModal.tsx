@@ -20,6 +20,7 @@ interface EnquiryFormModalProps {
   courses: Course[]
   users: User[]
   isLoadingOptions: boolean
+  lockedBranchId?: string
   isSubmitting: boolean
   error: string
   onClose: () => void
@@ -49,6 +50,7 @@ export function EnquiryFormModal({
   courses,
   users,
   isLoadingOptions,
+  lockedBranchId,
   isSubmitting,
   error,
   onClose,
@@ -75,7 +77,7 @@ export function EnquiryFormModal({
   useEffect(() => {
     if (open) {
       setLeadId(enquiry?.leadId ?? '')
-      setBranchId(enquiry?.branchId ?? '')
+      setBranchId(enquiry?.branchId ?? lockedBranchId ?? '')
       setCourseId(enquiry?.courseId ?? '')
       setAssignedTo(enquiry?.assignedTo ?? '')
       setEnquiryDate(
@@ -86,7 +88,7 @@ export function EnquiryFormModal({
       setStatus(enquiry?.status ?? 'yet_to_decide')
       setNotes(enquiry?.notes ?? '')
     }
-  }, [open, enquiry])
+  }, [open, enquiry, lockedBranchId])
 
   useEffect(() => {
     if (mode === 'create' && selectedLead) {
@@ -194,7 +196,9 @@ export function EnquiryFormModal({
                 value={branchId}
                 onChange={(e) => setBranchId(e.target.value)}
                 required
-                disabled={isSubmitting || branches.length === 0}
+                disabled={
+                  isSubmitting || branches.length === 0 || !!lockedBranchId
+                }
                 className={selectClassName}
               >
                 <option value="">Select branch</option>

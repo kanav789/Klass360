@@ -1,4 +1,6 @@
 import { apiRequest } from '@/lib/api'
+import { withQueryParams } from '@/lib/query'
+import type { ListQueryParams } from '@/types/user'
 import type {
   CoursePayload,
   CourseResponse,
@@ -6,7 +8,8 @@ import type {
 } from '@/types/course'
 
 export const courseService = {
-  getAll: () => apiRequest<CoursesResponse>('/courses'),
+  getAll: (params?: ListQueryParams) =>
+    apiRequest<CoursesResponse>(withQueryParams('/courses', params)),
 
   getById: (id: string) => apiRequest<CourseResponse>(`/courses/${id}`),
 
