@@ -137,6 +137,17 @@ This section documents **what frontend feature connects to which backend API**.
 |-------------------|-------------|--------------|
 | `src/pages/students/StudentsPage.tsx` | `GET /api/students` | Read-only listing of students created from admissions |
 
+### Institute Settings
+
+| Frontend Location | Backend API | What It Does |
+|-------------------|-------------|--------------|
+| `src/pages/settings/SettingsPage.tsx` | `GET /api/institutes` | Loads all institutes in the settings table |
+| `src/components/institutes/InstituteFormModal.tsx` (create) | `POST /api/institutes` | Creates institute with logo upload via `multipart/form-data` |
+| `src/components/institutes/InstituteFormModal.tsx` (edit) | `PUT /api/institutes/:id` | Updates institute and optionally replaces logo |
+| `src/components/institutes/DeleteInstituteModal.tsx` | `DELETE /api/institutes/:id` | Deletes institute and logo after confirmation |
+| `src/context/InstituteContext.tsx` | `GET /api/institutes/active` | Loads active institute for sidebar branding |
+| `src/components/layout/Sidebar.tsx` | — | Displays institute logo and name in sidebar header |
+
 ### Fee Management
 
 | Frontend Location | Backend API | What It Does |
@@ -162,6 +173,7 @@ This section documents **what frontend feature connects to which backend API**.
 | `src/services/admissionService.ts` | Admission CRUD API calls |
 | `src/services/studentService.ts` | Student read-only API calls |
 | `src/services/feeService.ts` | Fee CRUD API calls |
+| `src/services/instituteService.ts` | Institute CRUD + logo upload API calls |
 | `src/types/auth.ts` | TypeScript interfaces for admin and API responses |
 | `src/types/branch.ts` | TypeScript interfaces for branch and API responses |
 | `src/types/course.ts` | TypeScript interfaces for course and API responses |
@@ -172,6 +184,7 @@ This section documents **what frontend feature connects to which backend API**.
 | `src/types/admission.ts` | TypeScript interfaces for admission and API responses |
 | `src/types/student.ts` | TypeScript interfaces for student and API responses |
 | `src/types/fee.ts` | TypeScript interfaces for fee and API responses |
+| `src/types/institute.ts` | TypeScript interfaces for institute and API responses |
 
 ### Route Protection
 
@@ -325,7 +338,7 @@ frontend/src/
 | `/fees` | Protected | Fee management (CRUD) |
 | `/reports` | Protected | Placeholder |
 | `/calendar` | Protected | Placeholder |
-| `/settings` | Protected | Placeholder |
+| `/settings` | Protected | Institute management (CRUD + logo upload) |
 | `/support` | Protected | Placeholder |
 
 ---

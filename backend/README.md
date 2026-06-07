@@ -1030,6 +1030,73 @@ One fee record per admission. `discount` and `netFee` are pulled from the linked
 
 ---
 
+### Institute Management
+
+> **Auth required:** All institute endpoints require a valid admin JWT token.
+
+Institute profile is managed from **Settings**. Logo uploads are stored on the server and served from `/uploads/logos/`.
+
+#### Create Institute
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/institutes` | Yes | Create institute with optional logo upload (`multipart/form-data`) |
+
+**Request body (form fields):**
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `name` | string | Yes | Unique institute name |
+| `email` | string | Yes | Unique institute email |
+| `phone` | string | Yes | 10-digit Indian mobile number |
+| `address` | string | Yes | Max 500 characters |
+| `isActive` | boolean | No | Default `true` |
+| `logo` | file | No | JPEG, PNG, WEBP, or GIF. Max 2MB |
+
+---
+
+#### Get All Institutes
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/institutes` | Yes | List all institutes |
+
+---
+
+#### Get Active Institute
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/institutes/active` | Yes | Returns the active institute for sidebar branding (latest active, or most recent) |
+
+---
+
+#### Get Institute by ID
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/institutes/:id` | Yes | Get a single institute by MongoDB ID |
+
+---
+
+#### Update Institute
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `PUT` | `/institutes/:id` | Yes | Update institute; optional new logo replaces old file |
+
+**Request body:** Same fields as create (`multipart/form-data`).
+
+---
+
+#### Delete Institute
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `DELETE` | `/institutes/:id` | Yes | Delete institute and remove uploaded logo file |
+
+---
+
 ## Project Structure
 
 ```
@@ -1062,7 +1129,8 @@ backend/
 │   │   ├── Enquiry.js         # Enquiry Mongoose schema
 │   │   ├── Admission.js       # Admission Mongoose schema
 │   │   ├── Student.js         # Student Mongoose schema
-│   │   └── Fee.js             # Fee Mongoose schema
+│   │   ├── Fee.js             # Fee Mongoose schema
+│   │   └── Institute.js       # Institute Mongoose schema
 │   ├── routes/
 │   │   ├── authRoutes.js      # /api/auth/* routes
 │   │   ├── branchRoutes.js    # /api/branches/* routes
@@ -1074,6 +1142,7 @@ backend/
 │   │   ├── admissionRoutes.js # /api/admissions/* routes
 │   │   ├── studentRoutes.js   # /api/students/* routes
 │   │   ├── feeRoutes.js       # /api/fees/* routes
+│   │   ├── instituteRoutes.js # /api/institutes/* routes
 │   │   └── index.js           # Route aggregator
 │   ├── utils/
 │   │   ├── AppError.js        # Custom error class
@@ -1089,7 +1158,8 @@ backend/
 │   │   ├── enquiryValidator.js # Enquiry validation rules
 │   │   ├── admissionValidator.js # Admission validation rules
 │   │   ├── studentValidator.js # Student validation rules
-│   │   └── feeValidator.js      # Fee validation rules
+│   │   ├── feeValidator.js      # Fee validation rules
+│   │   └── instituteValidator.js # Institute validation rules
 │   ├── app.js                 # Express app setup
 │   └── server.js              # Entry point
 ├── .env.example

@@ -13,6 +13,7 @@ import {
   Settings,
   Headphones,
 } from 'lucide-react'
+import { useInstitute } from '@/context/InstituteContext'
 import { cn } from '@/lib/utils'
 
 const mainNavItems = [
@@ -36,16 +37,31 @@ const bottomNavItems = [
 ]
 
 export function Sidebar() {
+  const { instituteName, instituteLogoUrl } = useInstitute()
+
   return (
     <aside className="fixed inset-y-0 left-0 z-30 flex w-[260px] flex-col bg-sidebar">
       <div className="flex flex-col gap-8 px-5 py-7">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-white">
-            Klass360
-          </h1>
-          <p className="mt-0.5 text-xs font-medium text-white/50">
-            Admin Portal
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/5">
+            {instituteLogoUrl ? (
+              <img
+                src={instituteLogoUrl}
+                alt={`${instituteName} logo`}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span className="text-sm font-bold text-lime">K3</span>
+            )}
+          </div>
+          <div className="min-w-0">
+            <h1 className="truncate text-lg font-bold tracking-tight text-white">
+              {instituteName}
+            </h1>
+            <p className="mt-0.5 text-xs font-medium text-white/50">
+              Admin Portal
+            </p>
+          </div>
         </div>
 
 

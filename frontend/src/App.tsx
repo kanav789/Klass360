@@ -13,6 +13,7 @@ import { LeadsPage } from '@/pages/leads/LeadsPage'
 import { StudentsPage } from '@/pages/students/StudentsPage'
 import { DashboardPage } from '@/pages/dashboard/DashboardPage'
 import { FeesPage } from '@/pages/fees/FeesPage'
+import { SettingsPage } from '@/pages/settings/SettingsPage'
 import { UsersPage } from '@/pages/users/UsersPage'
 import { PlaceholderPage } from '@/pages/PlaceholderPage'
 
@@ -57,15 +58,7 @@ function App() {
                 />
               }
             />
-            <Route
-              path="/settings"
-              element={
-                <PlaceholderPage
-                  title="Settings"
-                  description="Configure your Klass360 portal."
-                />
-              }
-            />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route
               path="/support"
               element={
