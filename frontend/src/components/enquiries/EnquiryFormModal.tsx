@@ -110,7 +110,7 @@ export function EnquiryFormModal({
     event.preventDefault()
     onSubmit({
       leadId,
-      branchId,
+      branchId: lockedBranchId || branchId,
       courseId,
       assignedTo,
       enquiryDate,
@@ -186,29 +186,33 @@ export function EnquiryFormModal({
             )}
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="enquiry-branch">
-                Branch <span className="text-danger">*</span>
-              </Label>
-              <select
-                id="enquiry-branch"
-                value={branchId}
-                onChange={(e) => setBranchId(e.target.value)}
-                required
-                disabled={
-                  isSubmitting || branches.length === 0 || !!lockedBranchId
-                }
-                className={selectClassName}
-              >
-                <option value="">Select branch</option>
-                {branches.map((branch) => (
-                  <option key={branch.id} value={branch.id}>
-                    {branch.name} ({branch.code})
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div
+            className={
+              lockedBranchId ? 'space-y-2' : 'grid gap-5 sm:grid-cols-2'
+            }
+          >
+            {!lockedBranchId && (
+              <div className="space-y-2">
+                <Label htmlFor="enquiry-branch">
+                  Branch <span className="text-danger">*</span>
+                </Label>
+                <select
+                  id="enquiry-branch"
+                  value={branchId}
+                  onChange={(e) => setBranchId(e.target.value)}
+                  required
+                  disabled={isSubmitting || branches.length === 0}
+                  className={selectClassName}
+                >
+                  <option value="">Select branch</option>
+                  {branches.map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      {branch.name} ({branch.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="enquiry-course">

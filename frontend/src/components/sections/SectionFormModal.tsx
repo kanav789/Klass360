@@ -41,9 +41,17 @@ export function SectionFormModal({
   const [endDate, setEndDate] = useState('')
   const [isActive, setIsActive] = useState(true)
 
+  const filteredCourses = useMemo(() => {
+    if (!lockedBranchId) return courses
+
+    return courses.filter((course) =>
+      course.branchIds.includes(lockedBranchId),
+    )
+  }, [courses, lockedBranchId])
+
   const selectedCourse = useMemo(
-    () => courses.find((course) => course.id === courseId),
-    [courses, courseId],
+    () => filteredCourses.find((course) => course.id === courseId),
+    [filteredCourses, courseId],
   )
 
   const availableBranches = useMemo(() => {
@@ -66,13 +74,18 @@ export function SectionFormModal({
   }, [open, section, lockedBranchId])
 
   useEffect(() => {
+    if (lockedBranchId) {
+      setBranchId(lockedBranchId)
+      return
+    }
+
     if (
       branchId &&
       !availableBranches.some((branch) => branch.id === branchId)
     ) {
       setBranchId('')
     }
-  }, [availableBranches, branchId])
+  }, [availableBranches, branchId, lockedBranchId])
 
   if (!open) return null
 
@@ -82,7 +95,7 @@ export function SectionFormModal({
     onSubmit({
       name,
       courseId,
-      branchId,
+      branchId: lockedBranchId || branchId,
       startDate,
       endDate,
       isActive,
@@ -142,7 +155,11 @@ export function SectionFormModal({
             />
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div
+            className={
+              lockedBranchId ? 'space-y-2' : 'grid gap-5 sm:grid-cols-2'
+            }
+          >
             <div className="space-y-2">
               <Label htmlFor="section-course">
                 Course <span className="text-danger">*</span>
@@ -158,11 +175,11 @@ export function SectionFormModal({
                   value={courseId}
                   onChange={(e) => setCourseId(e.target.value)}
                   required
-                  disabled={isSubmitting || courses.length === 0}
+                  disabled={isSubmitting || filteredCourses.length === 0}
                   className={selectClassName}
                 >
                   <option value="">Select course</option>
-                  {courses.map((course) => (
+                  {filteredCourses.map((course) => (
                     <option key={course.id} value={course.id}>
                       {course.name}
                     </option>
@@ -171,33 +188,34 @@ export function SectionFormModal({
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="section-branch">
-                Branch <span className="text-danger">*</span>
-              </Label>
-              <select
-                id="section-branch"
-                value={branchId}
-                onChange={(e) => setBranchId(e.target.value)}
-                required
-                disabled={
-                  isSubmitting ||
-                  !courseId ||
-                  availableBranches.length === 0 ||
-                  !!lockedBranchId
-                }
-                className={selectClassName}
-              >
-                <option value="">
-                  {courseId ? 'Select branch' : 'Select course first'}
-                </option>
-                {availableBranches.map((branch) => (
-                  <option key={branch.id} value={branch.id}>
-                    {branch.name} ({branch.code})
+            {!lockedBranchId && (
+              <div className="space-y-2">
+                <Label htmlFor="section-branch">
+                  Branch <span className="text-danger">*</span>
+                </Label>
+                <select
+                  id="section-branch"
+                  value={branchId}
+                  onChange={(e) => setBranchId(e.target.value)}
+                  required
+                  disabled={
+                    isSubmitting ||
+                    !courseId ||
+                    availableBranches.length === 0
+                  }
+                  className={selectClassName}
+                >
+                  <option value="">
+                    {courseId ? 'Select branch' : 'Select course first'}
                   </option>
-                ))}
-              </select>
-            </div>
+                  {availableBranches.map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      {branch.name} ({branch.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
@@ -260,8 +278,8 @@ export function SectionFormModal({
               disabled={
                 isSubmitting ||
                 !courseId ||
-                !branchId ||
-                courses.length === 0
+                !(lockedBranchId || branchId) ||
+                filteredCourses.length === 0
               }
             >
               {isSubmitting ? (

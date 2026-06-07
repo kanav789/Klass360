@@ -106,7 +106,7 @@ export function LeadFormModal({
       name,
       whatsappNumber,
       alternateNumber: alternateNumber || '',
-      branchId,
+      branchId: lockedBranchId || branchId,
       courseId,
       source,
       assignedTo,
@@ -246,36 +246,40 @@ export function LeadFormModal({
             />
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="lead-branch">
-                Branch <span className="text-danger">*</span>
-              </Label>
-              {isLoadingOptions ? (
-                <div className="flex h-12 items-center gap-2 rounded-[var(--radius-input)] border border-border bg-input px-4 text-sm text-secondary">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading...
-                </div>
-              ) : (
-                <select
-                  id="lead-branch"
-                  value={branchId}
-                  onChange={(e) => setBranchId(e.target.value)}
-                  required
-                  disabled={
-                    isSubmitting || branches.length === 0 || !!lockedBranchId
-                  }
-                  className={selectClassName}
-                >
-                  <option value="">Select branch</option>
-                  {branches.map((branch) => (
-                    <option key={branch.id} value={branch.id}>
-                      {branch.name} ({branch.code})
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
+          <div
+            className={
+              lockedBranchId ? 'space-y-2' : 'grid gap-5 sm:grid-cols-2'
+            }
+          >
+            {!lockedBranchId && (
+              <div className="space-y-2">
+                <Label htmlFor="lead-branch">
+                  Branch <span className="text-danger">*</span>
+                </Label>
+                {isLoadingOptions ? (
+                  <div className="flex h-12 items-center gap-2 rounded-[var(--radius-input)] border border-border bg-input px-4 text-sm text-secondary">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading...
+                  </div>
+                ) : (
+                  <select
+                    id="lead-branch"
+                    value={branchId}
+                    onChange={(e) => setBranchId(e.target.value)}
+                    required
+                    disabled={isSubmitting || branches.length === 0}
+                    className={selectClassName}
+                  >
+                    <option value="">Select branch</option>
+                    {branches.map((branch) => (
+                      <option key={branch.id} value={branch.id}>
+                        {branch.name} ({branch.code})
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="lead-course">

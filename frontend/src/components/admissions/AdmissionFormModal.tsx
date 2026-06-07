@@ -151,7 +151,7 @@ export function AdmissionFormModal({
       enquiryId,
       leadId,
       courseId,
-      branchId,
+      branchId: lockedBranchId || branchId,
       batchId,
       admissionDate,
       totalFee: Number(totalFee),
@@ -227,29 +227,30 @@ export function AdmissionFormModal({
               </select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="branchId">Branch</Label>
-              <select
-                id="branchId"
-                value={branchId}
-                onChange={(e) => setBranchId(e.target.value)}
-                required
-                disabled={
-                  isLoadingOptions ||
-                  isSubmitting ||
-                  (mode === 'create' && !!selectedEnquiry) ||
-                  !!lockedBranchId
-                }
-                className="flex h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-primary outline-none transition-colors focus:border-lime focus:ring-2 focus:ring-lime/20 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <option value="">Select branch</option>
-                {branches.map((branch) => (
-                  <option key={branch.id} value={branch.id}>
-                    {branch.name} ({branch.code})
-                  </option>
-                ))}
-              </select>
-            </div>
+            {!lockedBranchId && (
+              <div className="space-y-2">
+                <Label htmlFor="branchId">Branch</Label>
+                <select
+                  id="branchId"
+                  value={branchId}
+                  onChange={(e) => setBranchId(e.target.value)}
+                  required
+                  disabled={
+                    isLoadingOptions ||
+                    isSubmitting ||
+                    (mode === 'create' && !!selectedEnquiry)
+                  }
+                  className="flex h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-primary outline-none transition-colors focus:border-lime focus:ring-2 focus:ring-lime/20 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <option value="">Select branch</option>
+                  {branches.map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      {branch.name} ({branch.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="courseId">Course</Label>

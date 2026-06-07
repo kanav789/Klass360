@@ -67,7 +67,7 @@ export function CourseFormModal({
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    if (selectedBranchIds.length === 0) {
+    if (!lockedBranchId && selectedBranchIds.length === 0) {
       return
     }
 
@@ -76,7 +76,7 @@ export function CourseFormModal({
       category,
       durationInMonths: Number(durationInMonths),
       description,
-      branchIds: selectedBranchIds,
+      branchIds: lockedBranchId ? [lockedBranchId] : selectedBranchIds,
       isActive,
     })
   }
@@ -97,7 +97,9 @@ export function CourseFormModal({
               {mode === 'create' ? 'Create Course' : 'Edit Course'}
             </h2>
             <p className="mt-1 text-sm text-secondary">
-              Define course details and assign it to one or more branches.
+              {lockedBranchId
+                ? 'Course will be created for the branch selected in the header filter.'
+                : 'Define course details and assign it to one or more branches.'}
             </p>
           </div>
           <button
@@ -190,53 +192,55 @@ export function CourseFormModal({
             />
           </div>
 
-          <div className="space-y-3">
-            <Label>
-              Branches <span className="text-danger">*</span>
-            </Label>
+          {!lockedBranchId && (
+            <div className="space-y-3">
+              <Label>
+                Branches <span className="text-danger">*</span>
+              </Label>
 
-            {isLoadingBranches ? (
-              <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-4 py-3 text-sm text-secondary">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Loading branches...
-              </div>
-            ) : branches.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-border bg-background px-4 py-3 text-sm text-secondary">
-                No branches available. Create a branch first.
-              </div>
-            ) : (
-              <div className="grid gap-2 rounded-xl border border-border bg-background p-4 sm:grid-cols-2">
-                {branches.map((branch) => (
-                  <label
-                    key={branch.id}
-                    className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-card"
-                  >
-                    <Checkbox
-                      checked={selectedBranchIds.includes(branch.id)}
-                      onCheckedChange={(checked) =>
-                        toggleBranch(branch.id, checked === true)
-                      }
-                      disabled={isSubmitting || !!lockedBranchId}
-                    />
-                    <span className="text-sm">
-                      <span className="font-medium text-primary">
-                        {branch.name}
+              {isLoadingBranches ? (
+                <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-4 py-3 text-sm text-secondary">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading branches...
+                </div>
+              ) : branches.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border bg-background px-4 py-3 text-sm text-secondary">
+                  No branches available. Create a branch first.
+                </div>
+              ) : (
+                <div className="grid gap-2 rounded-xl border border-border bg-background p-4 sm:grid-cols-2">
+                  {branches.map((branch) => (
+                    <label
+                      key={branch.id}
+                      className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-card"
+                    >
+                      <Checkbox
+                        checked={selectedBranchIds.includes(branch.id)}
+                        onCheckedChange={(checked) =>
+                          toggleBranch(branch.id, checked === true)
+                        }
+                        disabled={isSubmitting}
+                      />
+                      <span className="text-sm">
+                        <span className="font-medium text-primary">
+                          {branch.name}
+                        </span>
+                        <span className="ml-2 font-mono text-xs text-secondary">
+                          {branch.code}
+                        </span>
                       </span>
-                      <span className="ml-2 font-mono text-xs text-secondary">
-                        {branch.code}
-                      </span>
-                    </span>
-                  </label>
-                ))}
-              </div>
-            )}
+                    </label>
+                  ))}
+                </div>
+              )}
 
-            {selectedBranchIds.length === 0 && branches.length > 0 && (
-              <p className="text-xs text-danger">
-                Select at least one branch for this course.
-              </p>
-            )}
-          </div>
+              {selectedBranchIds.length === 0 && branches.length > 0 && (
+                <p className="text-xs text-danger">
+                  Select at least one branch for this course.
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="flex justify-end gap-3 pt-2">
             <Button
@@ -252,8 +256,8 @@ export function CourseFormModal({
               variant="primary"
               disabled={
                 isSubmitting ||
-                branches.length === 0 ||
-                selectedBranchIds.length === 0
+                (!lockedBranchId &&
+                  (branches.length === 0 || selectedBranchIds.length === 0))
               }
             >
               {isSubmitting ? (
