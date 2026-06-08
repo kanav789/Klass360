@@ -18,13 +18,13 @@ import { cn } from '@/lib/utils'
 
 const mainNavItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+  { label: 'Branch', icon: Building2, path: '/branches' },
+  { label: 'Courses', icon: BookOpen, path: '/courses' },
+  { label: 'Batches', icon: Layers, path: '/batches' },
   { label: 'Leads', icon: Users, path: '/leads' },
   { label: 'Enquiries', icon: MessageSquare, path: '/enquiries' },
   { label: 'Admissions', icon: ClipboardCheck, path: '/admissions' },
   { label: 'Students', icon: GraduationCap, path: '/students' },
-  { label: 'Branch', icon: Building2, path: '/branches' },
-  { label: 'Courses', icon: BookOpen, path: '/courses' },
-  { label: 'Batches', icon: Layers, path: '/batches' },
   { label: 'Users', icon: UserCog, path: '/users' },
   { label: 'Fees', icon: Wallet, path: '/fees' },
   // { label: 'Reports', icon: BarChart3, path: '/reports' },
