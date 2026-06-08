@@ -33,7 +33,7 @@ const mainNavItems = [
 
 const bottomNavItems = [
   { label: 'Settings', icon: Settings, path: '/settings' },
-  { label: 'Support', icon: Headphones, path: '/support' },
+  // { label: 'Support', icon: Headphones, path: '/support' },
 ]
 
 export function Sidebar() {
