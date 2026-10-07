@@ -6,6 +6,7 @@ export interface Institute {
   address: string
   logo: string
   isActive: boolean
+  ownerName?: string
   createdAt: string
   updatedAt: string
 }

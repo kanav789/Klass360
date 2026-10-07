@@ -1,5 +1,13 @@
 const Admission = require('../models/Admission');
-const { getBranchIdFromQuery } = require('../utils/queryFilters');
+const {
+  getBranchIdFromQuery,
+  getInstituteIdFromQuery,
+} = require('../utils/queryFilters');
+const {
+  getOwnedInstituteIds,
+  buildInstituteFilter,
+  ensureInstituteAccess,
+} = require('../utils/tenancy');
 const Fee = require('../models/Fee');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
@@ -50,6 +58,7 @@ const formatAdmissionRef = (admission) => ({
 const formatFee = (fee) => ({
   id: fee._id,
   admissionId: fee.admissionId?._id || fee.admissionId,
+  instituteId: fee.instituteId,
   discount: fee.discount ?? 0,
   netFee: fee.netFee,
   paidAmount: fee.paidAmount,
@@ -91,6 +100,15 @@ const getPopulatedFee = (id) =>
 const createFee = asyncHandler(async (req, res) => {
   const { admissionId, paidAmount } = req.body;
 
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
+  const admission = await Admission.findById(admissionId);
+
+  if (!admission) {
+    throw new AppError('Selected admission does not exist', 400);
+  }
+
+  ensureInstituteAccess(ownedInstituteIds, admission.instituteId);
+
   const existingFee = await Fee.findOne({ admissionId });
 
   if (existingFee) {
@@ -105,6 +123,7 @@ const createFee = asyncHandler(async (req, res) => {
 
   const fee = await Fee.create({
     admissionId,
+    instituteId: admission.instituteId,
     discount,
     netFee,
     paidAmount,
@@ -120,8 +139,11 @@ const createFee = asyncHandler(async (req, res) => {
 });
 
 const getFees = asyncHandler(async (req, res) => {
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const branchId = getBranchIdFromQuery(req.query);
-  const filter = {};
+  const requestedInstituteId = getInstituteIdFromQuery(req.query);
+
+  const filter = buildInstituteFilter(ownedInstituteIds, requestedInstituteId);
 
   if (branchId) {
     const admissions = await Admission.find({ branchId }).select('_id');
@@ -151,11 +173,14 @@ const getFees = asyncHandler(async (req, res) => {
 });
 
 const getFeeById = asyncHandler(async (req, res) => {
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const fee = await getPopulatedFee(req.params.id);
 
   if (!fee) {
     throw new AppError('Fee record not found', 404);
   }
+
+  ensureInstituteAccess(ownedInstituteIds, fee.instituteId);
 
   res.status(200).json({
     success: true,
@@ -165,6 +190,7 @@ const getFeeById = asyncHandler(async (req, res) => {
 
 const updateFee = asyncHandler(async (req, res) => {
   const { admissionId, paidAmount } = req.body;
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
 
   const fee = await Fee.findById(req.params.id);
 
@@ -172,12 +198,18 @@ const updateFee = asyncHandler(async (req, res) => {
     throw new AppError('Fee record not found', 404);
   }
 
-  const nextAdmissionId = admissionId ?? fee.admissionId;
+  ensureInstituteAccess(ownedInstituteIds, fee.instituteId);
 
-  if (
-    admissionId &&
-    admissionId !== fee.admissionId.toString()
-  ) {
+  const nextAdmissionId = admissionId ?? fee.admissionId;
+  const nextAdmission = await Admission.findById(nextAdmissionId);
+
+  if (!nextAdmission) {
+    throw new AppError('Selected admission does not exist', 400);
+  }
+
+  ensureInstituteAccess(ownedInstituteIds, nextAdmission.instituteId);
+
+  if (admissionId && admissionId !== fee.admissionId.toString()) {
     const existingFee = await Fee.findOne({ admissionId });
 
     if (existingFee) {
@@ -193,6 +225,7 @@ const updateFee = asyncHandler(async (req, res) => {
   }
 
   fee.admissionId = nextAdmissionId;
+  fee.instituteId = nextAdmission.instituteId;
   fee.discount = discount;
   fee.netFee = netFee;
   fee.paidAmount = nextPaidAmount;
@@ -208,11 +241,16 @@ const updateFee = asyncHandler(async (req, res) => {
 });
 
 const deleteFee = asyncHandler(async (req, res) => {
-  const fee = await Fee.findByIdAndDelete(req.params.id);
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
+  const fee = await Fee.findById(req.params.id);
 
   if (!fee) {
     throw new AppError('Fee record not found', 404);
   }
+
+  ensureInstituteAccess(ownedInstituteIds, fee.instituteId);
+
+  await fee.deleteOne();
 
   res.status(200).json({
     success: true,

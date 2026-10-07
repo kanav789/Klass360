@@ -34,7 +34,7 @@ const register = asyncHandler(async (req, res) => {
     role: 'admin',
   });
 
-  const token = signToken(admin._id);
+  const token = signToken(admin._id, admin.role);
 
   res.status(201).json({
     success: true,
@@ -74,7 +74,7 @@ const login = asyncHandler(async (req, res) => {
   admin.lastLoginAt = new Date();
   await admin.save({ validateBeforeSave: false });
 
-  const token = signToken(admin._id);
+  const token = signToken(admin._id, admin.role);
 
   res.status(200).json(buildAuthResponse(admin, token));
 });

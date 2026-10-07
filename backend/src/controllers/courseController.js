@@ -2,7 +2,15 @@ const Branch = require('../models/Branch');
 const Course = require('../models/Course');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
-const { getBranchIdFromQuery } = require('../utils/queryFilters');
+const {
+  getBranchIdFromQuery,
+  getInstituteIdFromQuery,
+} = require('../utils/queryFilters');
+const {
+  getOwnedInstituteIds,
+  buildInstituteFilter,
+  ensureInstituteAccess,
+} = require('../utils/tenancy');
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -25,6 +33,7 @@ const formatCourse = (course) => {
 
   return {
     id: course._id,
+    instituteId: course.instituteId,
     name: course.name,
     category: course.category,
     durationInMonths: course.durationInMonths,
@@ -37,7 +46,13 @@ const formatCourse = (course) => {
   };
 };
 
-const validateBranchIds = async (branchIds) => {
+// Returns the branch documents after verifying they exist, are owned by the
+// admin, and all belong to one institute.
+const validateBranchIds = async (branchIds, ownedInstituteIds) => {
+  if (!Array.isArray(branchIds) || branchIds.length === 0) {
+    throw new AppError('Select at least one branch', 400);
+  }
+
   const uniqueBranchIds = [...new Set(branchIds.map((id) => id.toString()))];
 
   const branches = await Branch.find({ _id: { $in: uniqueBranchIds } });
@@ -46,7 +61,31 @@ const validateBranchIds = async (branchIds) => {
     throw new AppError('One or more selected branches do not exist', 400);
   }
 
-  return uniqueBranchIds;
+  const outsideInstitute = branches.some(
+    (branch) =>
+      !branch.instituteId ||
+      (ownedInstituteIds !== null &&
+        !ownedInstituteIds.some(
+          (id) => String(id) === String(branch.instituteId),
+        )),
+  );
+
+  if (outsideInstitute) {
+    throw new AppError('One or more selected branches do not exist', 400);
+  }
+
+  const instituteIds = new Set(
+    branches.map((branch) => String(branch.instituteId)),
+  );
+
+  if (instituteIds.size > 1) {
+    throw new AppError(
+      'All selected branches must belong to the same institute',
+      400,
+    );
+  }
+
+  return branches;
 };
 
 const getPopulatedCourse = (id) =>
@@ -62,7 +101,12 @@ const createCourse = asyncHandler(async (req, res) => {
     isActive = true,
   } = req.body;
 
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
+  const branches = await validateBranchIds(branchIds, ownedInstituteIds);
+  const instituteId = branches[0].instituteId;
+
   const existingCourse = await Course.findOne({
+    instituteId,
     name: { $regex: new RegExp(`^${escapeRegex(name)}$`, 'i') },
   });
 
@@ -70,14 +114,13 @@ const createCourse = asyncHandler(async (req, res) => {
     throw new AppError('A course with this name already exists', 409);
   }
 
-  const validatedBranchIds = await validateBranchIds(branchIds);
-
   const course = await Course.create({
+    instituteId,
     name,
     category,
     durationInMonths,
     description,
-    branchIds: validatedBranchIds,
+    branchIds: branches.map((branch) => branch._id),
     isActive,
   });
 
@@ -91,8 +134,15 @@ const createCourse = asyncHandler(async (req, res) => {
 });
 
 const getCourses = asyncHandler(async (req, res) => {
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const branchId = getBranchIdFromQuery(req.query);
-  const filter = branchId ? { branchIds: branchId } : {};
+  const requestedInstituteId = getInstituteIdFromQuery(req.query);
+
+  const filter = buildInstituteFilter(ownedInstituteIds, requestedInstituteId);
+
+  if (branchId) {
+    filter.branchIds = branchId;
+  }
 
   const courses = await Course.find(filter)
     .populate('branchIds', 'name code')
@@ -108,11 +158,14 @@ const getCourses = asyncHandler(async (req, res) => {
 });
 
 const getCourseById = asyncHandler(async (req, res) => {
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const course = await getPopulatedCourse(req.params.id);
 
   if (!course) {
     throw new AppError('Course not found', 404);
   }
+
+  ensureInstituteAccess(ownedInstituteIds, course.instituteId);
 
   res.status(200).json({
     success: true,
@@ -130,14 +183,18 @@ const updateCourse = asyncHandler(async (req, res) => {
     isActive,
   } = req.body;
 
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const course = await Course.findById(req.params.id);
 
   if (!course) {
     throw new AppError('Course not found', 404);
   }
 
+  ensureInstituteAccess(ownedInstituteIds, course.instituteId);
+
   if (name && name.toLowerCase() !== course.name.toLowerCase()) {
     const existingCourse = await Course.findOne({
+      instituteId: course.instituteId,
       name: { $regex: new RegExp(`^${escapeRegex(name)}$`, 'i') },
       _id: { $ne: course._id },
     });
@@ -148,7 +205,9 @@ const updateCourse = asyncHandler(async (req, res) => {
   }
 
   if (branchIds) {
-    course.branchIds = await validateBranchIds(branchIds);
+    course.branchIds = (
+      await validateBranchIds(branchIds, ownedInstituteIds)
+    ).map((branch) => branch._id);
   }
 
   course.name = name ?? course.name;
@@ -172,11 +231,16 @@ const updateCourse = asyncHandler(async (req, res) => {
 });
 
 const deleteCourse = asyncHandler(async (req, res) => {
-  const course = await Course.findByIdAndDelete(req.params.id);
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
+  const course = await Course.findById(req.params.id);
 
   if (!course) {
     throw new AppError('Course not found', 404);
   }
+
+  ensureInstituteAccess(ownedInstituteIds, course.instituteId);
+
+  await course.deleteOne();
 
   res.status(200).json({
     success: true,
@@ -185,11 +249,14 @@ const deleteCourse = asyncHandler(async (req, res) => {
 });
 
 const activateCourse = asyncHandler(async (req, res) => {
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const course = await Course.findById(req.params.id);
 
   if (!course) {
     throw new AppError('Course not found', 404);
   }
+
+  ensureInstituteAccess(ownedInstituteIds, course.instituteId);
 
   course.isActive = true;
   await course.save();
@@ -204,11 +271,14 @@ const activateCourse = asyncHandler(async (req, res) => {
 });
 
 const deactivateCourse = asyncHandler(async (req, res) => {
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const course = await Course.findById(req.params.id);
 
   if (!course) {
     throw new AppError('Course not found', 404);
   }
+
+  ensureInstituteAccess(ownedInstituteIds, course.instituteId);
 
   course.isActive = false;
   await course.save();

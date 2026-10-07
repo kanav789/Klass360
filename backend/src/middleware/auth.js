@@ -3,6 +3,8 @@ const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
 const { verifyToken } = require('../utils/jwt');
 
+const ADMIN_ROLES = ['admin', 'superadmin'];
+
 const authenticate = asyncHandler(async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
@@ -29,7 +31,7 @@ const authenticate = asyncHandler(async (req, res, next) => {
     throw new AppError('Your account has been deactivated.', 403);
   }
 
-  if (admin.role !== 'admin') {
+  if (!ADMIN_ROLES.includes(admin.role)) {
     throw new AppError('Access denied. Admin privileges required.', 403);
   }
 
@@ -37,4 +39,13 @@ const authenticate = asyncHandler(async (req, res, next) => {
   next();
 });
 
-module.exports = { authenticate };
+const authorize = (...roles) => (req, _res, next) => {
+  if (!req.admin || !roles.includes(req.admin.role)) {
+    next(new AppError('Access denied. You do not have permission for this action.', 403));
+    return;
+  }
+
+  next();
+};
+
+module.exports = { authenticate, authorize };

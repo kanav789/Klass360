@@ -1,4 +1,5 @@
 import { apiFormRequest, apiRequest } from '@/lib/api'
+import { withQueryParams } from '@/lib/query'
 import type {
   ActiveInstituteResponse,
   InstitutePayload,
@@ -22,7 +23,8 @@ const buildFormData = (payload: InstitutePayload) => {
 }
 
 export const instituteService = {
-  getAll: () => apiRequest<InstitutesResponse>('/institutes'),
+  getAll: (params?: { ownerId?: string }) =>
+    apiRequest<InstitutesResponse>(withQueryParams('/institutes', params)),
 
   getActive: () => apiRequest<ActiveInstituteResponse>('/institutes/active'),
 

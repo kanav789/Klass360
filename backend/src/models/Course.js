@@ -2,6 +2,11 @@ const mongoose = require('mongoose');
 
 const courseSchema = new mongoose.Schema(
   {
+    instituteId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Institute',
+      required: [true, 'Institute is required'],
+    },
     name: {
       type: String,
       required: [true, 'Course name is required'],
@@ -48,7 +53,7 @@ const courseSchema = new mongoose.Schema(
   },
 );
 
-courseSchema.index({ name: 1 }, { unique: true });
+courseSchema.index({ instituteId: 1, name: 1 }, { unique: true });
 
 const Course = mongoose.model('Course', courseSchema);
 

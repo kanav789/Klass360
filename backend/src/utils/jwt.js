@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-const signToken = (adminId) => {
+const signToken = (adminId, role = 'admin') => {
   const secret = process.env.JWT_SECRET;
   const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
 
@@ -8,7 +8,7 @@ const signToken = (adminId) => {
     throw new Error('JWT_SECRET is not defined in environment variables');
   }
 
-  return jwt.sign({ id: adminId, role: 'admin' }, secret, { expiresIn });
+  return jwt.sign({ id: adminId, role }, secret, { expiresIn });
 };
 
 const verifyToken = (token) => {

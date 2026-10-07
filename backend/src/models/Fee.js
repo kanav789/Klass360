@@ -9,6 +9,11 @@ const feeSchema = new mongoose.Schema(
       ref: 'Admission',
       required: [true, 'Admission is required'],
     },
+    instituteId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Institute',
+      required: [true, 'Institute is required'],
+    },
     discount: {
       type: Number,
       default: 0,

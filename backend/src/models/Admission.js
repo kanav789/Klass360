@@ -24,6 +24,11 @@ const admissionSchema = new mongoose.Schema(
       ref: 'Branch',
       required: [true, 'Branch is required'],
     },
+    instituteId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Institute',
+      required: [true, 'Institute is required'],
+    },
     batchId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Section',

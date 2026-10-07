@@ -18,6 +18,11 @@ const sectionSchema = new mongoose.Schema(
       ref: 'Branch',
       required: [true, 'Branch is required'],
     },
+    instituteId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Institute',
+      required: [true, 'Institute is required'],
+    },
     startDate: {
       type: Date,
       required: [true, 'Start date is required'],

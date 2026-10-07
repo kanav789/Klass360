@@ -2,8 +2,10 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { GuestRoute } from '@/components/auth/GuestRoute'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { RoleRoute } from '@/components/auth/RoleRoute'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { SignupPage } from '@/pages/auth/SignupPage'
+import { AdminsPage } from '@/pages/admins/AdminsPage'
 import { BranchesPage } from '@/pages/branches/BranchesPage'
 import { CoursesPage } from '@/pages/courses/CoursesPage'
 import { SectionsPage } from '@/pages/sections/SectionsPage'
@@ -29,6 +31,9 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
             <Route path="/" element={<Navigate to="/enquiries" replace />} />
+            <Route element={<RoleRoute allowedRoles={['superadmin']} />}>
+              <Route path="/admins" element={<AdminsPage />} />
+            </Route>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/leads" element={<LeadsPage />} />
             <Route path="/enquiries" element={<EnquiriesPage />} />

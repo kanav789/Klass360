@@ -48,4 +48,5 @@ export interface UserPayload {
 
 export interface ListQueryParams {
   branchId?: string
+  instituteId?: string
 }

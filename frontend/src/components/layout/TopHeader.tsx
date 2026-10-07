@@ -80,7 +80,9 @@ export function TopHeader() {
 
         <div className="ml-2 hidden text-right sm:block">
           <p className="text-sm font-semibold text-primary">{admin?.fullName}</p>
-          <p className="text-xs text-secondary">{admin?.email}</p>
+          <p className="text-xs text-secondary">
+            {admin?.role === 'superadmin' ? 'Super Admin' : admin?.email}
+          </p>
         </div>
 
         <div

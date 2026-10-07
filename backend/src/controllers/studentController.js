@@ -1,7 +1,15 @@
 const Student = require('../models/Student');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
-const { getBranchIdFromQuery } = require('../utils/queryFilters');
+const {
+  getBranchIdFromQuery,
+  getInstituteIdFromQuery,
+} = require('../utils/queryFilters');
+const {
+  getOwnedInstituteIds,
+  buildInstituteFilter,
+  ensureInstituteAccess,
+} = require('../utils/tenancy');
 
 const formatBranchRef = (branch) => ({
   id: branch._id,
@@ -26,6 +34,7 @@ const formatStudent = (student) => ({
   alternateMobile: student.alternateMobile || '',
   qualification: student.qualification || '',
   branchId: student.branchId?._id || student.branchId,
+  instituteId: student.instituteId,
   branch:
     student.branchId && typeof student.branchId === 'object'
       ? formatBranchRef(student.branchId)
@@ -45,8 +54,15 @@ const getPopulatedStudent = (id) =>
     .populate('leadId', 'name number');
 
 const getStudents = asyncHandler(async (req, res) => {
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const branchId = getBranchIdFromQuery(req.query);
-  const filter = branchId ? { branchId } : {};
+  const requestedInstituteId = getInstituteIdFromQuery(req.query);
+
+  const filter = buildInstituteFilter(ownedInstituteIds, requestedInstituteId);
+
+  if (branchId) {
+    filter.branchId = branchId;
+  }
 
   const students = await Student.find(filter)
     .populate('branchId', 'name code')
@@ -63,11 +79,14 @@ const getStudents = asyncHandler(async (req, res) => {
 });
 
 const getStudentById = asyncHandler(async (req, res) => {
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const student = await getPopulatedStudent(req.params.id);
 
   if (!student) {
     throw new AppError('Student not found', 404);
   }
+
+  ensureInstituteAccess(ownedInstituteIds, student.instituteId);
 
   res.status(200).json({
     success: true,

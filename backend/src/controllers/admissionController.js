@@ -7,7 +7,15 @@ const Section = require('../models/Section');
 const Student = require('../models/Student');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
-const { getBranchIdFromQuery } = require('../utils/queryFilters');
+const {
+  getBranchIdFromQuery,
+  getInstituteIdFromQuery,
+} = require('../utils/queryFilters');
+const {
+  getOwnedInstituteIds,
+  buildInstituteFilter,
+  ensureInstituteAccess,
+} = require('../utils/tenancy');
 
 const formatBranchRef = (branch) => ({
   id: branch._id,
@@ -52,6 +60,7 @@ const formatAdmission = (admission) => ({
   branchId: admission.branchId?._id || admission.branchId,
   batchId: admission.batchId?._id || admission.batchId,
   studentId: admission.studentId?._id || admission.studentId,
+  instituteId: admission.instituteId,
   lead:
     admission.leadId && typeof admission.leadId === 'object'
       ? formatLeadRef(admission.leadId)
@@ -144,6 +153,18 @@ const validateAdmissionRelations = async ({
     throw new AppError('Selected batch does not belong to this branch', 400);
   }
 
+  if (String(enquiry.instituteId) !== String(branch.instituteId)) {
+    throw new AppError('Selected enquiry does not belong to this branch', 400);
+  }
+
+  if (String(course.instituteId) !== String(branch.instituteId)) {
+    throw new AppError('Selected course is not available for this branch', 400);
+  }
+
+  if (String(batch.instituteId) !== String(branch.instituteId)) {
+    throw new AppError('Selected batch does not belong to this branch', 400);
+  }
+
   return { enquiry, lead, branch, course, batch };
 };
 
@@ -175,6 +196,7 @@ const syncStudentFromAdmission = async (admission, lead, options = {}) => {
   student.whatsappNumber = lead.whatsappNumber;
   student.alternateMobile = lead.alternateNumber || '';
   student.branchId = admission.branchId;
+  student.instituteId = admission.instituteId;
 
   if (email) {
     student.email = email;
@@ -216,13 +238,16 @@ const createAdmission = asyncHandler(async (req, res) => {
     throw new AppError('An admission already exists for this enquiry', 400);
   }
 
-  const { lead } = await validateAdmissionRelations({
+  const { lead, branch } = await validateAdmissionRelations({
     enquiryId,
     leadId,
     branchId,
     courseId,
     batchId,
   });
+
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
+  ensureInstituteAccess(ownedInstituteIds, branch.instituteId);
 
   let admission;
 
@@ -233,6 +258,7 @@ const createAdmission = asyncHandler(async (req, res) => {
       courseId,
       branchId,
       batchId,
+      instituteId: branch.instituteId,
       admissionDate: new Date(admissionDate),
       totalFee,
       discount,
@@ -250,6 +276,7 @@ const createAdmission = asyncHandler(async (req, res) => {
         alternateMobile: lead.alternateNumber || '',
         qualification,
         branchId,
+        instituteId: branch.instituteId,
         isActive: status !== 'cancelled',
       });
 
@@ -277,8 +304,15 @@ const createAdmission = asyncHandler(async (req, res) => {
 });
 
 const getAdmissions = asyncHandler(async (req, res) => {
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const branchId = getBranchIdFromQuery(req.query);
-  const filter = branchId ? { branchId } : {};
+  const requestedInstituteId = getInstituteIdFromQuery(req.query);
+
+  const filter = buildInstituteFilter(ownedInstituteIds, requestedInstituteId);
+
+  if (branchId) {
+    filter.branchId = branchId;
+  }
 
   const admissions = await Admission.find(filter)
     .populate('leadId', 'name number whatsappNumber')
@@ -298,11 +332,14 @@ const getAdmissions = asyncHandler(async (req, res) => {
 });
 
 const getAdmissionById = asyncHandler(async (req, res) => {
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const admission = await getPopulatedAdmission(req.params.id);
 
   if (!admission) {
     throw new AppError('Admission not found', 404);
   }
+
+  ensureInstituteAccess(ownedInstituteIds, admission.instituteId);
 
   res.status(200).json({
     success: true,
@@ -325,11 +362,14 @@ const updateAdmission = asyncHandler(async (req, res) => {
     qualification,
   } = req.body;
 
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const admission = await Admission.findById(req.params.id);
 
   if (!admission) {
     throw new AppError('Admission not found', 404);
   }
+
+  ensureInstituteAccess(ownedInstituteIds, admission.instituteId);
 
   const nextTotalFee = totalFee ?? admission.totalFee;
   const nextDiscount = discount ?? admission.discount ?? 0;
@@ -346,7 +386,7 @@ const updateAdmission = asyncHandler(async (req, res) => {
     }
   }
 
-  const { lead } = await validateAdmissionRelations({
+  const { lead, branch } = await validateAdmissionRelations({
     enquiryId: enquiryId ?? admission.enquiryId,
     leadId: leadId ?? admission.leadId,
     branchId: branchId ?? admission.branchId,
@@ -359,6 +399,7 @@ const updateAdmission = asyncHandler(async (req, res) => {
   admission.courseId = courseId ?? admission.courseId;
   admission.branchId = branchId ?? admission.branchId;
   admission.batchId = batchId ?? admission.batchId;
+  admission.instituteId = branch.instituteId;
   admission.admissionDate = admissionDate
     ? new Date(admissionDate)
     : admission.admissionDate;
@@ -379,11 +420,14 @@ const updateAdmission = asyncHandler(async (req, res) => {
 });
 
 const deleteAdmission = asyncHandler(async (req, res) => {
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const admission = await Admission.findById(req.params.id);
 
   if (!admission) {
     throw new AppError('Admission not found', 404);
   }
+
+  ensureInstituteAccess(ownedInstituteIds, admission.instituteId);
 
   if (admission.studentId) {
     await Student.findByIdAndDelete(admission.studentId);

@@ -1,6 +1,9 @@
 export type QueryParams = Partial<{
   branchId: string
   instituteId: string
+  ownerId: string
+  search: string
+  isActive: string
 }>
 
 export function withQueryParams(endpoint: string, params?: QueryParams) {

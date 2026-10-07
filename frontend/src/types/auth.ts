@@ -1,8 +1,10 @@
+export type AdminRole = 'admin' | 'superadmin'
+
 export interface Admin {
   id: string
   fullName: string
   email: string
-  role: 'admin'
+  role: AdminRole
   lastLoginAt?: string | null
   createdAt: string
 }

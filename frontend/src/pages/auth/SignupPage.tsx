@@ -43,7 +43,7 @@ export function SignupPage() {
 
     try {
       await register({ fullName, email, password })
-      navigate('/enquiries', { replace: true })
+      navigate('/settings', { replace: true })
     } catch (err) {
       const message =
         err instanceof ApiError

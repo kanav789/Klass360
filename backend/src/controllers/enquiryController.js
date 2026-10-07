@@ -5,7 +5,15 @@ const Lead = require('../models/Lead');
 const User = require('../models/User');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
-const { getBranchIdFromQuery } = require('../utils/queryFilters');
+const {
+  getBranchIdFromQuery,
+  getInstituteIdFromQuery,
+} = require('../utils/queryFilters');
+const {
+  getOwnedInstituteIds,
+  buildInstituteFilter,
+  ensureInstituteAccess,
+} = require('../utils/tenancy');
 
 const formatBranchRef = (branch) => ({
   id: branch._id,
@@ -40,6 +48,7 @@ const formatEnquiry = (enquiry) => ({
   courseId: enquiry.courseId?._id || enquiry.courseId,
   branchId: enquiry.branchId?._id || enquiry.branchId,
   assignedTo: enquiry.assignedTo?._id || enquiry.assignedTo,
+  instituteId: enquiry.instituteId,
   lead:
     enquiry.leadId && typeof enquiry.leadId === 'object'
       ? formatLeadRef(enquiry.leadId)
@@ -100,6 +109,21 @@ const validateEnquiryRelations = async ({
     throw new AppError('Selected course is not available for this branch', 400);
   }
 
+  if (String(lead.instituteId) !== String(branch.instituteId)) {
+    throw new AppError('Selected lead does not belong to this branch', 400);
+  }
+
+  if (String(course.instituteId) !== String(branch.instituteId)) {
+    throw new AppError('Selected course is not available for this branch', 400);
+  }
+
+  if (String(user.instituteId) !== String(branch.instituteId)) {
+    throw new AppError(
+      'Selected assigned user does not belong to this institute',
+      400,
+    );
+  }
+
   return { lead, branch, course, user };
 };
 
@@ -121,13 +145,22 @@ const createEnquiry = asyncHandler(async (req, res) => {
     notes = '',
   } = req.body;
 
-  await validateEnquiryRelations({ leadId, branchId, courseId, assignedTo });
+  const { branch } = await validateEnquiryRelations({
+    leadId,
+    branchId,
+    courseId,
+    assignedTo,
+  });
+
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
+  ensureInstituteAccess(ownedInstituteIds, branch.instituteId);
 
   const enquiry = await Enquiry.create({
     leadId,
     courseId,
     branchId,
     assignedTo,
+    instituteId: branch.instituteId,
     enquiryDate: new Date(enquiryDate),
     status,
     notes,
@@ -143,8 +176,15 @@ const createEnquiry = asyncHandler(async (req, res) => {
 });
 
 const getEnquiries = asyncHandler(async (req, res) => {
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const branchId = getBranchIdFromQuery(req.query);
-  const filter = branchId ? { branchId } : {};
+  const requestedInstituteId = getInstituteIdFromQuery(req.query);
+
+  const filter = buildInstituteFilter(ownedInstituteIds, requestedInstituteId);
+
+  if (branchId) {
+    filter.branchId = branchId;
+  }
 
   const enquiries = await Enquiry.find(filter)
     .populate('leadId', 'name number whatsappNumber')
@@ -163,11 +203,14 @@ const getEnquiries = asyncHandler(async (req, res) => {
 });
 
 const getEnquiryById = asyncHandler(async (req, res) => {
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const enquiry = await getPopulatedEnquiry(req.params.id);
 
   if (!enquiry) {
     throw new AppError('Enquiry not found', 404);
   }
+
+  ensureInstituteAccess(ownedInstituteIds, enquiry.instituteId);
 
   res.status(200).json({
     success: true,
@@ -186,13 +229,16 @@ const updateEnquiry = asyncHandler(async (req, res) => {
     notes,
   } = req.body;
 
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const enquiry = await Enquiry.findById(req.params.id);
 
   if (!enquiry) {
     throw new AppError('Enquiry not found', 404);
   }
 
-  await validateEnquiryRelations({
+  ensureInstituteAccess(ownedInstituteIds, enquiry.instituteId);
+
+  const { branch: nextBranch } = await validateEnquiryRelations({
     leadId: leadId ?? enquiry.leadId,
     branchId: branchId ?? enquiry.branchId,
     courseId: courseId ?? enquiry.courseId,
@@ -202,6 +248,7 @@ const updateEnquiry = asyncHandler(async (req, res) => {
   enquiry.leadId = leadId ?? enquiry.leadId;
   enquiry.courseId = courseId ?? enquiry.courseId;
   enquiry.branchId = branchId ?? enquiry.branchId;
+  enquiry.instituteId = nextBranch.instituteId;
   enquiry.assignedTo = assignedTo ?? enquiry.assignedTo;
   enquiry.enquiryDate = enquiryDate
     ? new Date(enquiryDate)
@@ -220,11 +267,16 @@ const updateEnquiry = asyncHandler(async (req, res) => {
 });
 
 const deleteEnquiry = asyncHandler(async (req, res) => {
-  const enquiry = await Enquiry.findByIdAndDelete(req.params.id);
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
+  const enquiry = await Enquiry.findById(req.params.id);
 
   if (!enquiry) {
     throw new AppError('Enquiry not found', 404);
   }
+
+  ensureInstituteAccess(ownedInstituteIds, enquiry.instituteId);
+
+  await enquiry.deleteOne();
 
   res.status(200).json({
     success: true,

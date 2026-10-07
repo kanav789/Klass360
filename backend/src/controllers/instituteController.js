@@ -1,7 +1,13 @@
+const mongoose = require('mongoose');
 const Institute = require('../models/Institute');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
 const { deleteLogoFile } = require('../middleware/uploadLogo');
+const {
+  getOwnedInstituteIds,
+  ensureInstituteAccess,
+} = require('../utils/tenancy');
+const { getInstituteIdFromQuery } = require('../utils/queryFilters');
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -13,7 +19,8 @@ const formatInstitute = (institute) => ({
   address: institute.address,
   logo: institute.logo || '',
   isActive: institute.isActive,
-  createdBy: institute.createdBy,
+  createdBy: institute.createdBy?._id || institute.createdBy,
+  ownerName: institute.createdBy?.fullName || '',
   createdAt: institute.createdAt,
   updatedAt: institute.updatedAt,
 });
@@ -99,8 +106,24 @@ const createInstitute = asyncHandler(async (req, res) => {
   });
 });
 
-const getInstitutes = asyncHandler(async (_req, res) => {
-  const institutes = await Institute.find().sort({ createdAt: -1 });
+const getInstitutes = asyncHandler(async (req, res) => {
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
+  const filter = {};
+
+  if (ownedInstituteIds === null) {
+    // Superadmin sees all institutes, optionally filtered to one owner.
+    const { ownerId } = req.query;
+
+    if (ownerId && mongoose.Types.ObjectId.isValid(ownerId)) {
+      filter.createdBy = ownerId;
+    }
+  } else {
+    filter._id = { $in: ownedInstituteIds };
+  }
+
+  const institutes = await Institute.find(filter)
+    .populate('createdBy', 'fullName')
+    .sort({ createdAt: -1 });
 
   res.status(200).json({
     success: true,
@@ -111,10 +134,33 @@ const getInstitutes = asyncHandler(async (_req, res) => {
   });
 });
 
-const getActiveInstitute = asyncHandler(async (_req, res) => {
-  const institute =
-    (await Institute.findOne({ isActive: true }).sort({ updatedAt: -1 })) ||
-    (await Institute.findOne().sort({ createdAt: -1 }));
+const getActiveInstitute = asyncHandler(async (req, res) => {
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
+  const requestedInstituteId = getInstituteIdFromQuery(req.query);
+
+  let institute = null;
+
+  if (ownedInstituteIds === null) {
+    institute = requestedInstituteId
+      ? await Institute.findById(requestedInstituteId)
+      : (await Institute.findOne({ isActive: true }).sort({ updatedAt: -1 })) ||
+        (await Institute.findOne().sort({ createdAt: -1 }));
+  } else if (requestedInstituteId) {
+    institute = ownedInstituteIds.some(
+      (id) => String(id) === String(requestedInstituteId),
+    )
+      ? await Institute.findById(requestedInstituteId)
+      : null;
+  } else {
+    institute =
+      (await Institute.findOne({
+        _id: { $in: ownedInstituteIds },
+        isActive: true,
+      }).sort({ updatedAt: -1 })) ||
+      (await Institute.findOne({
+        _id: { $in: ownedInstituteIds },
+      }).sort({ createdAt: -1 }));
+  }
 
   res.status(200).json({
     success: true,
@@ -125,11 +171,14 @@ const getActiveInstitute = asyncHandler(async (_req, res) => {
 });
 
 const getInstituteById = asyncHandler(async (req, res) => {
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const institute = await Institute.findById(req.params.id);
 
   if (!institute) {
     throw new AppError('Institute not found', 404);
   }
+
+  ensureInstituteAccess(ownedInstituteIds, institute._id);
 
   res.status(200).json({
     success: true,
@@ -139,6 +188,7 @@ const getInstituteById = asyncHandler(async (req, res) => {
 
 const updateInstitute = asyncHandler(async (req, res) => {
   const { name, email, phone, address } = req.body;
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
 
   const institute = await Institute.findById(req.params.id);
 
@@ -149,6 +199,8 @@ const updateInstitute = asyncHandler(async (req, res) => {
 
     throw new AppError('Institute not found', 404);
   }
+
+  ensureInstituteAccess(ownedInstituteIds, institute._id);
 
   const nextName = name ?? institute.name;
   const nextEmail = email ?? institute.email;
@@ -197,11 +249,16 @@ const updateInstitute = asyncHandler(async (req, res) => {
 });
 
 const deleteInstitute = asyncHandler(async (req, res) => {
-  const institute = await Institute.findByIdAndDelete(req.params.id);
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
+  const institute = await Institute.findById(req.params.id);
 
   if (!institute) {
     throw new AppError('Institute not found', 404);
   }
+
+  ensureInstituteAccess(ownedInstituteIds, institute._id);
+
+  await institute.deleteOne();
 
   if (institute.logo) {
     deleteLogoFile(institute.logo);

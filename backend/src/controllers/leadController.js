@@ -4,7 +4,15 @@ const Lead = require('../models/Lead');
 const User = require('../models/User');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
-const { getBranchIdFromQuery } = require('../utils/queryFilters');
+const {
+  getBranchIdFromQuery,
+  getInstituteIdFromQuery,
+} = require('../utils/queryFilters');
+const {
+  getOwnedInstituteIds,
+  buildInstituteFilter,
+  ensureInstituteAccess,
+} = require('../utils/tenancy');
 
 const formatBranchRef = (branch) => ({
   id: branch._id,
@@ -35,6 +43,7 @@ const formatLead = (lead) => ({
   branchId: lead.branchId?._id || lead.branchId,
   courseId: lead.courseId?._id || lead.courseId,
   assignedTo: lead.assignedTo?._id || lead.assignedTo,
+  instituteId: lead.instituteId,
   branch:
     lead.branchId && typeof lead.branchId === 'object'
       ? formatBranchRef(lead.branchId)
@@ -79,6 +88,17 @@ const validateLeadRelations = async ({ branchId, courseId, assignedTo }) => {
     throw new AppError('Selected course is not available for this branch', 400);
   }
 
+  if (String(course.instituteId) !== String(branch.instituteId)) {
+    throw new AppError('Selected course is not available for this branch', 400);
+  }
+
+  if (String(user.instituteId) !== String(branch.instituteId)) {
+    throw new AppError(
+      'Selected assigned user does not belong to this institute',
+      400,
+    );
+  }
+
   return { branch, course, user };
 };
 
@@ -100,13 +120,23 @@ const createLead = asyncHandler(async (req, res) => {
     assignedTo,
   } = req.body;
 
-  const existingLead = await Lead.findOne({ number });
+  const { branch } = await validateLeadRelations({
+    branchId,
+    courseId,
+    assignedTo,
+  });
+
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
+  ensureInstituteAccess(ownedInstituteIds, branch.instituteId);
+
+  const existingLead = await Lead.findOne({
+    instituteId: branch.instituteId,
+    number,
+  });
 
   if (existingLead) {
     throw new AppError('A lead with this phone number already exists', 409);
   }
-
-  await validateLeadRelations({ branchId, courseId, assignedTo });
 
   const lead = await Lead.create({
     name,
@@ -117,6 +147,7 @@ const createLead = asyncHandler(async (req, res) => {
     courseId,
     source,
     assignedTo,
+    instituteId: branch.instituteId,
   });
 
   const populatedLead = await getPopulatedLead(lead._id);
@@ -129,8 +160,15 @@ const createLead = asyncHandler(async (req, res) => {
 });
 
 const getLeads = asyncHandler(async (req, res) => {
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const branchId = getBranchIdFromQuery(req.query);
-  const filter = branchId ? { branchId } : {};
+  const requestedInstituteId = getInstituteIdFromQuery(req.query);
+
+  const filter = buildInstituteFilter(ownedInstituteIds, requestedInstituteId);
+
+  if (branchId) {
+    filter.branchId = branchId;
+  }
 
   const leads = await Lead.find(filter)
     .populate('branchId', 'name code')
@@ -148,11 +186,14 @@ const getLeads = asyncHandler(async (req, res) => {
 });
 
 const getLeadById = asyncHandler(async (req, res) => {
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const lead = await getPopulatedLead(req.params.id);
 
   if (!lead) {
     throw new AppError('Lead not found', 404);
   }
+
+  ensureInstituteAccess(ownedInstituteIds, lead.instituteId);
 
   res.status(200).json({
     success: true,
@@ -175,18 +216,27 @@ const updateLead = asyncHandler(async (req, res) => {
     assignedTo,
   } = req.body;
 
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const lead = await Lead.findById(req.params.id);
 
   if (!lead) {
     throw new AppError('Lead not found', 404);
   }
 
-  await validateLeadRelations({ branchId, courseId, assignedTo });
+  ensureInstituteAccess(ownedInstituteIds, lead.instituteId);
+
+  const nextBranchId = branchId ?? lead.branchId;
+  const { branch } = await validateLeadRelations({
+    branchId: nextBranchId,
+    courseId: courseId ?? lead.courseId,
+    assignedTo: assignedTo ?? lead.assignedTo,
+  });
 
   lead.name = name ?? lead.name;
   lead.whatsappNumber = whatsappNumber ?? lead.whatsappNumber;
   lead.alternateNumber = alternateNumber ?? lead.alternateNumber;
-  lead.branchId = branchId ?? lead.branchId;
+  lead.branchId = nextBranchId;
+  lead.instituteId = branch.instituteId;
   lead.courseId = courseId ?? lead.courseId;
   lead.source = source ?? lead.source;
   lead.assignedTo = assignedTo ?? lead.assignedTo;
@@ -202,11 +252,16 @@ const updateLead = asyncHandler(async (req, res) => {
 });
 
 const deleteLead = asyncHandler(async (req, res) => {
-  const lead = await Lead.findByIdAndDelete(req.params.id);
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
+  const lead = await Lead.findById(req.params.id);
 
   if (!lead) {
     throw new AppError('Lead not found', 404);
   }
+
+  ensureInstituteAccess(ownedInstituteIds, lead.instituteId);
+
+  await lead.deleteOne();
 
   res.status(200).json({
     success: true,

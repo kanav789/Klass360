@@ -32,7 +32,6 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       required: [true, 'Email is required'],
-      unique: true,
       lowercase: true,
       trim: true,
       match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email address'],
@@ -50,6 +49,11 @@ const userSchema = new mongoose.Schema(
       ref: 'Branch',
       required: [true, 'Branch is required'],
     },
+    instituteId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Institute',
+      required: [true, 'Institute is required'],
+    },
   },
   {
     timestamps: true,
@@ -62,7 +66,8 @@ const userSchema = new mongoose.Schema(
   },
 );
 
-userSchema.index({ mobile: 1 }, { unique: true });
+userSchema.index({ instituteId: 1, mobile: 1 }, { unique: true });
+userSchema.index({ instituteId: 1, email: 1 }, { unique: true });
 
 const User = mongoose.model('User', userSchema);
 

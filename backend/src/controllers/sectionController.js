@@ -3,7 +3,15 @@ const Course = require('../models/Course');
 const Section = require('../models/Section');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
-const { getBranchIdFromQuery } = require('../utils/queryFilters');
+const {
+  getBranchIdFromQuery,
+  getInstituteIdFromQuery,
+} = require('../utils/queryFilters');
+const {
+  getOwnedInstituteIds,
+  buildInstituteFilter,
+  ensureInstituteAccess,
+} = require('../utils/tenancy');
 
 const formatCourseRef = (course) => ({
   id: course._id,
@@ -22,6 +30,7 @@ const formatSection = (section) => ({
   name: section.name,
   courseId: section.courseId?._id || section.courseId,
   branchId: section.branchId?._id || section.branchId,
+  instituteId: section.instituteId,
   course:
     section.courseId && typeof section.courseId === 'object'
       ? formatCourseRef(section.courseId)
@@ -95,10 +104,21 @@ const createSection = asyncHandler(async (req, res) => {
   await validateCourseAndBranch(courseId, branchId);
   const { start, end } = validateDates(startDate, endDate);
 
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
+  const branch = await Branch.findById(branchId).select('instituteId');
+  const course = await Course.findById(courseId).select('instituteId');
+
+  ensureInstituteAccess(ownedInstituteIds, branch.instituteId);
+
+  if (String(course.instituteId) !== String(branch.instituteId)) {
+    throw new AppError('Selected course is not available for this branch', 400);
+  }
+
   const section = await Section.create({
     name,
     courseId,
     branchId,
+    instituteId: branch.instituteId,
     startDate: start,
     endDate: end,
     isActive,
@@ -114,8 +134,15 @@ const createSection = asyncHandler(async (req, res) => {
 });
 
 const getSections = asyncHandler(async (req, res) => {
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const branchId = getBranchIdFromQuery(req.query);
-  const filter = branchId ? { branchId } : {};
+  const requestedInstituteId = getInstituteIdFromQuery(req.query);
+
+  const filter = buildInstituteFilter(ownedInstituteIds, requestedInstituteId);
+
+  if (branchId) {
+    filter.branchId = branchId;
+  }
 
   const sections = await Section.find(filter)
     .populate('courseId', 'name category')
@@ -132,11 +159,14 @@ const getSections = asyncHandler(async (req, res) => {
 });
 
 const getSectionById = asyncHandler(async (req, res) => {
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const section = await getPopulatedSection(req.params.id);
 
   if (!section) {
     throw new AppError('Section not found', 404);
   }
+
+  ensureInstituteAccess(ownedInstituteIds, section.instituteId);
 
   res.status(200).json({
     success: true,
@@ -154,11 +184,14 @@ const updateSection = asyncHandler(async (req, res) => {
     isActive,
   } = req.body;
 
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const section = await Section.findById(req.params.id);
 
   if (!section) {
     throw new AppError('Section not found', 404);
   }
+
+  ensureInstituteAccess(ownedInstituteIds, section.instituteId);
 
   const nextCourseId = courseId ?? section.courseId;
   const nextBranchId = branchId ?? section.branchId;
@@ -168,9 +201,14 @@ const updateSection = asyncHandler(async (req, res) => {
   await validateCourseAndBranch(nextCourseId, nextBranchId);
   const { start, end } = validateDates(nextStartDate, nextEndDate);
 
+  const nextBranch = await Branch.findById(nextBranchId).select('instituteId');
+
+  ensureInstituteAccess(ownedInstituteIds, nextBranch.instituteId);
+
   section.name = name ?? section.name;
   section.courseId = nextCourseId;
   section.branchId = nextBranchId;
+  section.instituteId = nextBranch.instituteId;
   section.startDate = start;
   section.endDate = end;
 
@@ -190,11 +228,16 @@ const updateSection = asyncHandler(async (req, res) => {
 });
 
 const deleteSection = asyncHandler(async (req, res) => {
-  const section = await Section.findByIdAndDelete(req.params.id);
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
+  const section = await Section.findById(req.params.id);
 
   if (!section) {
     throw new AppError('Section not found', 404);
   }
+
+  ensureInstituteAccess(ownedInstituteIds, section.instituteId);
+
+  await section.deleteOne();
 
   res.status(200).json({
     success: true,
@@ -203,11 +246,14 @@ const deleteSection = asyncHandler(async (req, res) => {
 });
 
 const activateSection = asyncHandler(async (req, res) => {
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const section = await Section.findById(req.params.id);
 
   if (!section) {
     throw new AppError('Section not found', 404);
   }
+
+  ensureInstituteAccess(ownedInstituteIds, section.instituteId);
 
   section.isActive = true;
   await section.save();
@@ -222,11 +268,14 @@ const activateSection = asyncHandler(async (req, res) => {
 });
 
 const deactivateSection = asyncHandler(async (req, res) => {
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const section = await Section.findById(req.params.id);
 
   if (!section) {
     throw new AppError('Section not found', 404);
   }
+
+  ensureInstituteAccess(ownedInstituteIds, section.instituteId);
 
   section.isActive = false;
   await section.save();

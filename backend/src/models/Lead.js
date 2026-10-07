@@ -39,6 +39,11 @@ const leadSchema = new mongoose.Schema(
       ref: 'Branch',
       required: [true, 'Branch is required'],
     },
+    instituteId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Institute',
+      required: [true, 'Institute is required'],
+    },
     courseId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Course',
@@ -69,7 +74,7 @@ const leadSchema = new mongoose.Schema(
   },
 );
 
-leadSchema.index({ number: 1 }, { unique: true });
+leadSchema.index({ instituteId: 1, number: 1 }, { unique: true });
 
 const Lead = mongoose.model('Lead', leadSchema);
 

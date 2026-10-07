@@ -6,6 +6,11 @@ const {
   getBranchIdFromQuery,
   getInstituteIdFromQuery,
 } = require('../utils/queryFilters');
+const {
+  getOwnedInstituteIds,
+  buildInstituteFilter,
+  ensureInstituteAccess,
+} = require('../utils/tenancy');
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -23,27 +28,31 @@ const formatBranch = (branch) => ({
   updatedAt: branch.updatedAt,
 });
 
-const resolveInstituteId = async (instituteId) => {
-  if (instituteId) {
-    const institute = await Institute.findById(instituteId);
+const resolveInstituteId = async (req, instituteId) => {
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
 
-    if (!institute) {
-      throw new AppError('Selected institute does not exist', 400);
+  if (!instituteId) {
+    if (ownedInstituteIds === null) {
+      throw new AppError('instituteId is required', 400);
     }
 
-    return institute._id;
+    if (ownedInstituteIds.length === 0) {
+      throw new AppError(
+        'Create an institute in Settings before adding branches',
+        400,
+      );
+    }
+
+    return ownedInstituteIds[0];
   }
 
-  const institute =
-    (await Institute.findOne({ isActive: true }).sort({ updatedAt: -1 })) ||
-    (await Institute.findOne().sort({ createdAt: -1 }));
+  const institute = await Institute.findById(instituteId);
 
   if (!institute) {
-    throw new AppError(
-      'Create an institute in Settings before adding branches',
-      400,
-    );
+    throw new AppError('Selected institute does not exist', 400);
   }
+
+  ensureInstituteAccess(ownedInstituteIds, institute._id);
 
   return institute._id;
 };
@@ -83,7 +92,7 @@ const createBranch = asyncHandler(async (req, res) => {
   const { name, code, address, city, state, status = 'active', instituteId } =
     req.body;
 
-  const resolvedInstituteId = await resolveInstituteId(instituteId);
+  const resolvedInstituteId = await resolveInstituteId(req, instituteId);
 
   const existingBranch = await findDuplicateBranch({
     instituteId: resolvedInstituteId,
@@ -118,14 +127,11 @@ const createBranch = asyncHandler(async (req, res) => {
 });
 
 const getBranches = asyncHandler(async (req, res) => {
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const instituteId = getInstituteIdFromQuery(req.query);
   const branchId = getBranchIdFromQuery(req.query);
 
-  const filter = {};
-
-  if (instituteId) {
-    filter.instituteId = instituteId;
-  }
+  const filter = buildInstituteFilter(ownedInstituteIds, instituteId);
 
   if (branchId) {
     filter._id = branchId;
@@ -143,11 +149,14 @@ const getBranches = asyncHandler(async (req, res) => {
 });
 
 const getBranchById = asyncHandler(async (req, res) => {
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
   const branch = await Branch.findById(req.params.id);
 
   if (!branch) {
     throw new AppError('Branch not found', 404);
   }
+
+  ensureInstituteAccess(ownedInstituteIds, branch.instituteId);
 
   res.status(200).json({
     success: true,
@@ -157,12 +166,15 @@ const getBranchById = asyncHandler(async (req, res) => {
 
 const updateBranch = asyncHandler(async (req, res) => {
   const { name, code, address, city, state, status } = req.body;
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
 
   const branch = await Branch.findById(req.params.id);
 
   if (!branch) {
     throw new AppError('Branch not found', 404);
   }
+
+  ensureInstituteAccess(ownedInstituteIds, branch.instituteId);
 
   const nameChanged = name && name.toLowerCase() !== branch.name.toLowerCase();
   const codeChanged =
@@ -201,11 +213,16 @@ const updateBranch = asyncHandler(async (req, res) => {
 });
 
 const deleteBranch = asyncHandler(async (req, res) => {
-  const branch = await Branch.findByIdAndDelete(req.params.id);
+  const ownedInstituteIds = await getOwnedInstituteIds(req.admin);
+  const branch = await Branch.findById(req.params.id);
 
   if (!branch) {
     throw new AppError('Branch not found', 404);
   }
+
+  ensureInstituteAccess(ownedInstituteIds, branch.instituteId);
+
+  await branch.deleteOne();
 
   res.status(200).json({
     success: true,
