@@ -49,60 +49,44 @@ export function Sidebar() {
 
   return (
     <aside className="fixed inset-y-0 left-0 z-30 flex w-[260px] flex-col bg-sidebar">
-      <div className="flex flex-col gap-8 px-5 py-7">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/5">
-              {instituteLogoUrl ? (
-                <img
-                  src={instituteLogoUrl}
-                  alt={`${instituteName} logo`}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <span className="text-sm font-bold text-lime">K3</span>
-              )}
-            </div>
-            <div className="min-w-0">
-              <h1 className="truncate text-lg font-bold tracking-tight text-white">
-                {instituteName}
-              </h1>
-              <p className="mt-0.5 text-xs font-medium text-white/50">
-                {isSuperAdmin ? 'Super Admin' : 'Admin Portal'}
-              </p>
-            </div>
+      <div className="flex flex-col gap-4 px-5 pb-7 pt-7">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/5">
+            {instituteLogoUrl ? (
+              <img
+                src={instituteLogoUrl}
+                alt={`${instituteName} logo`}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span className="text-sm font-bold text-lime">K3</span>
+            )}
           </div>
-
-          <InstituteSwitcher />
+          <div className="min-w-0">
+            <h1 className="truncate text-lg font-bold tracking-tight text-white">
+              {instituteName}
+            </h1>
+            <p className="mt-0.5 text-xs font-medium text-white/50">
+              {isSuperAdmin ? 'Super Admin' : 'Admin Portal'}
+            </p>
+          </div>
         </div>
 
+        <InstituteSwitcher />
+      </div>
 
-        <nav className="flex flex-col gap-1">
-          {isSuperAdmin &&
-            superAdminNavItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200',
-                    isActive
-                      ? 'bg-lime font-semibold text-primary'
-                      : 'text-white/75 hover:bg-white/5 hover:text-white',
-                  )
-                }
-              >
-                <item.icon className="h-[18px] w-[18px] shrink-0" />
-                {item.label}
-              </NavLink>
-            ))}
-          {mainNavItems.map((item) => (
+      <nav
+        className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-5 pb-5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-track]:bg-transparent"
+        aria-label="Main navigation"
+      >
+        {isSuperAdmin &&
+          superAdminNavItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200',
+                  'flex shrink-0 items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200',
                   isActive
                     ? 'bg-lime font-semibold text-primary'
                     : 'text-white/75 hover:bg-white/5 hover:text-white',
@@ -113,10 +97,26 @@ export function Sidebar() {
               {item.label}
             </NavLink>
           ))}
-        </nav>
-      </div>
+        {mainNavItems.map((item) => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            className={({ isActive }) =>
+              cn(
+                'flex shrink-0 items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200',
+                isActive
+                  ? 'bg-lime font-semibold text-primary'
+                  : 'text-white/75 hover:bg-white/5 hover:text-white',
+              )
+            }
+          >
+            <item.icon className="h-[18px] w-[18px] shrink-0" />
+            {item.label}
+          </NavLink>
+        ))}
+      </nav>
 
-      <div className="mt-auto border-t border-white/10 px-5 py-5">
+      <div className="border-t border-white/10 px-5 py-5">
         <nav className="flex flex-col gap-1">
           {bottomNavItems.map((item) => (
             <NavLink
